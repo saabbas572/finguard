@@ -25,6 +25,14 @@ MongoDB · Python · FastAPI · Docker · Sentry · AWS · GitHub Actions
 
 ---
 
+## Architecture Diagram
+
+![FinGuard Architecture](docs/Architecture.png)
+
+The diagram illustrates the FinGuard monorepo architecture. The React frontend in `client/vite-project` communicates with the Express backend under `server`, while the `pipeline` directory is reserved for the future Python transaction-processing service. MongoDB stores user and alert data, and Docker is used to compose the frontend, backend, and database services. The diagram also highlights external integrations for monitoring, auth, and data pipelines at a high level.
+
+---
+
 ## Development Log
 
 ### Day 1 — Monorepo Scaffold & Project Initialization
@@ -50,3 +58,16 @@ on port 5000, and the React frontend on port 3000.
 `bcryptjs`, `dotenv`, `cors`, `ts-node`, `nodemon`, `concurrently`
 
 **Next:** MongoDB connection, User model, first auth route (`/api/auth/register`)
+
+### Day 2 — Auth API + MongoDB Integration
+**Date:** June 11, 2026
+
+Connected the Express backend to MongoDB using `mongoose` and environment-based URI configuration. Added a `User` model with `name`, `email`, hashed `password`, `role`, and timestamps.
+
+Implemented `/api/auth/register` and `/api/auth/login` routes with password hashing via `bcryptjs`, JWT issuance with `jsonwebtoken`, and controller logic for registration and login.
+
+Added `/health` for service readiness, plus server startup configuration with `dotenv`, `cors`, and JSON body parsing.
+
+**Completed today:** Backend auth flow, database integration, user schema, register/login controllers, and API routing.
+
+**Next:** Frontend auth flows, protected routes, Redux auth slice, and scenario builder UI.

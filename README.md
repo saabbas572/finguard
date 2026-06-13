@@ -59,6 +59,11 @@ on port 5000, and the React frontend on port 3000.
 
 **Next:** MongoDB connection, User model, first auth route (`/api/auth/register`)
 
+**What I learned:**
+- How to organize a TypeScript monorepo with separate frontend and backend workspaces.
+- How to scaffold a Vite React app and an Express server together.
+- How to use Docker and `concurrently` to run both services locally.
+
 ### Day 2 — Auth API + MongoDB Integration
 **Date:** June 11, 2026
 
@@ -70,4 +75,37 @@ Added `/health` for service readiness, plus server startup configuration with `d
 
 **Completed today:** Backend auth flow, database integration, user schema, register/login controllers, and API routing.
 
-**Next:** Frontend auth flows, protected routes, Redux auth slice, and scenario builder UI.
+**Next:** Protected routes, Redux auth slice, and scenario builder UI.
+
+**What I learned:**
+- How to connect Express to MongoDB with Mongoose and handle env-based configuration.
+- How to build registration and login flows with bcrypt password hashing and JWT authentication.
+- How to structure controllers and API routes for auth functionality.
+
+### Day 3 — Tailwind Integration & Auth UI
+**Date:** June 12, 2026
+
+Installed Tailwind CSS into `client/vite-project` and added PostCSS configuration so Vite can process Tailwind utilities.
+
+Configured `tailwind.config.js` to scan `./index.html` and `./src/**/*.{js,ts,jsx,tsx}`. Imported Tailwind directives in `src/index.css` and used `@apply` for shared auth-card layout styles.
+
+Updated the login and register pages to use Tailwind utility classes directly in JSX, including responsive layout, styled input fields, and button states.
+
+**Completed today:** Tailwind install, Tailwind/PostCSS config, global Tailwind CSS setup, and login/register page styling.
+
+**Next:** Extend the Tailwind-based design system to dashboard components, add auth form validation feedback, and build the scenario builder interface.
+
+**What I learned:**
+- How to install and configure Tailwind CSS in a Vite React application.
+- How to use Tailwind utility classes for responsive auth page layout and styling.
+- How to integrate PostCSS and keep styles maintainable with shared utility classes.
+
+---
+
+## Development Summary
+
+| Day | Expected | Done | Challenges |
+| --- | --- | --- | --- |
+| Day 1 | Scaffold monorepo, setup client/server, configure workspaces and Docker. | Initialized the repo, created `client` and `server`, scaffolded Vite React and Express backend, added TypeScript tooling and Docker compose. | Coordinating workspace structure and TypeScript config across frontend and backend. |
+| Day 2 | Build auth API with MongoDB integration, user model, and login/register routes. | Connected backend to MongoDB, created user schema, implemented `/api/auth/register` and `/api/auth/login`, added health check and middleware. | Ensuring secure password hashing, JWT handling, and environment-based database config. |
+| Day 3 | Integrate Tailwind into React client and style auth pages. | Installed Tailwind, configured PostCSS, imported Tailwind directives, and converted login/register UI to Tailwind utilities. | Wiring Tailwind into the Vite build and updating the auth UI without conflicting existing CSS. |

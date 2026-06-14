@@ -3,9 +3,8 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-
-const Dashboard = () => <h1>Dashboard — coming Day 4</h1>;
 
 function App() {
   return (

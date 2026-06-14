@@ -100,6 +100,23 @@ Updated the login and register pages to use Tailwind utility classes directly in
 - How to use Tailwind utility classes for responsive auth page layout and styling.
 - How to integrate PostCSS and keep styles maintainable with shared utility classes.
 
+### Day 4 — Protected Routes & Auth Integration
+**Date:** June 13, 2026
+
+Started implementing auth middleware and protected backend routes for the Express API. Added a Redux auth slice in the client and connected login/register forms to the backend auth API.
+
+Created protected client routes with route guards, and began scaffolding the dashboard layout that will host the scenario builder. Added client-side form validation feedback for login and registration, with a cleaner summary-based UI and invalid-field highlighting.
+
+**Completed today:** Auth middleware, protected API route structure, Redux auth slice, frontend auth flow wiring, protected dashboard route, and auth form validation/feedback.
+
+**Next:** Complete dashboard pages, build scenario/rule creation UI, and expand the protected scenario builder interface.
+
+**What I learned:**
+- How to protect Express routes with JWT auth middleware.
+- How to manage auth state in Redux and connect it to the React app.
+- How to create protected client routes for authenticated pages.
+- How to add validation feedback without cluttering the auth form UI.
+
 ---
 
 ## Development Summary
@@ -109,3 +126,5 @@ Updated the login and register pages to use Tailwind utility classes directly in
 | Day 1 | Scaffold monorepo, setup client/server, configure workspaces and Docker. | Initialized the repo, created `client` and `server`, scaffolded Vite React and Express backend, added TypeScript tooling and Docker compose. | Coordinating workspace structure and TypeScript config across frontend and backend. |
 | Day 2 | Build auth API with MongoDB integration, user model, and login/register routes. | Connected backend to MongoDB, created user schema, implemented `/api/auth/register` and `/api/auth/login`, added health check and middleware. | Ensuring secure password hashing, JWT handling, and environment-based database config. |
 | Day 3 | Integrate Tailwind into React client and style auth pages. | Installed Tailwind, configured PostCSS, imported Tailwind directives, and converted login/register UI to Tailwind utilities. | Wiring Tailwind into the Vite build and updating the auth UI without conflicting existing CSS. |
+| Day 4 | Protect auth routes, connect frontend login flow, and start dashboard scaffolding. | Implemented auth middleware and protected API routes, added Redux auth slice, wired UI auth flow, and scaffolded protected dashboard route. | Coordinating stateful auth flow across backend middleware and frontend route guards. |
+

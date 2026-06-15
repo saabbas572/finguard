@@ -119,6 +119,24 @@ Created protected client routes with route guards, and began scaffolding the das
 
 ---
 
+### Day 5 — Scenario Builder & Dashboard Expansion
+**Date:** June 15, 2026
+
+Added a protected Scenario Builder page to the React frontend and wired it into routing. Built a local scenario template editor that saves rules in local storage, with category selection, condition input, threshold entry, and active/inactive status.
+
+Updated the dashboard to link to the new scenario builder and refined the next-steps section to reflect rule-template creation.
+
+**Completed today:** Scenario Builder page, protected `/builder` route, dashboard navigation, local scenario persistence, and updated development log.
+
+**Next:** Add backend scenario storage, build rule execution pipelines in `pipeline`, and surface rule metrics with dashboard charts.
+
+**What I learned:**
+- How to structure a scenario builder UI for alert rule creation.
+- How to persist user-defined templates client-side with localStorage.
+- How to connect feature navigation between dashboard and builder pages.
+
+---
+
 ## Development Summary
 
 | Day | Expected | Done | Challenges |

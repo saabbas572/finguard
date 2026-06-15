@@ -56,13 +56,21 @@ const Dashboard = () => {
             <h1 className="text-3xl font-semibold text-slate-900">Dashboard</h1>
             <p className="mt-2 text-slate-600">Welcome back, {user?.name ?? 'Analyst'}.</p>
           </div>
-          <button
-            type="button"
-            className="rounded-2xl bg-rose-600 px-5 py-3 text-white transition hover:bg-rose-700"
-            onClick={handleLogout}
-          >
-            Sign out
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href="/builder"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Go to scenario builder
+            </a>
+            <button
+              type="button"
+              className="rounded-2xl bg-rose-600 px-5 py-3 text-white transition hover:bg-rose-700"
+              onClick={handleLogout}
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -84,7 +92,7 @@ const Dashboard = () => {
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
             <h2 className="text-xl font-semibold text-slate-900">Next steps</h2>
             <ul className="mt-4 space-y-3 text-slate-700">
-              <li>Build the scenario builder interface</li>
+              <li>Build and save scenario builder templates</li>
               <li>Create alert rule templates</li>
               <li>Add dashboard charts for flagged activity</li>
             </ul>

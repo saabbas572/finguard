@@ -3,9 +3,15 @@ import { loginUser, registerUser, logoutUser } from '../services/authService';
 import type { AuthState, LoginCredentials, RegisterCredentials } from '../types/auth';
 
 const storedUser = localStorage.getItem('user');
+const devBypassEnabled = import.meta.env.DEV && localStorage.getItem('dev_auth_bypass') === 'true';
+const devMockUser = {
+  name: 'Dev User',
+  email: 'dev@local',
+  token: 'devtoken',
+};
 
 const initialState: AuthState = {
-  user: storedUser ? JSON.parse(storedUser) : null,
+  user: storedUser ? JSON.parse(storedUser) : devBypassEnabled ? devMockUser : null,
   loading: false,
   error: null,
 };

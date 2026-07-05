@@ -137,6 +137,41 @@ Updated the dashboard to link to the new scenario builder and refined the next-s
 
 ---
 
+### Day 6 — Scenario API & Full Scenario CRUD
+**Date:** June 16, 2026
+
+Built backend scenario persistence and connected it to the frontend scenario builder UI. Added a `Scenario` Mongoose model, RESTful scenario routes, controller logic, and protected route access using JWT auth middleware. Completed the frontend integration with a `scenarioService`, Redux `scenarioSlice`, scenario list page, and create/edit modal form.
+
+**Completed today:** Backend scenario storage, full CRUD API (`POST`, `GET`, `PUT`, `DELETE`, `PATCH /toggle`), frontend Redux flow, scenario UI components, parameter editing, and API documentation.
+
+**Next:** Integrate rule execution into the `pipeline` service, add dashboard metrics/analytics for scenario performance, and build story-driven rule notifications.
+
+**What I learned:**
+- How to wire a full CRUD feature end-to-end between frontend and backend.
+- How to manage scenario state with Redux and keep UI in sync with API updates.
+- How to build a reusable form component for create/edit workflows.
+
+---
+
+### Day 7 — Rule Pipeline Engine & Alert System
+**Date:** July 5, 2026
+
+Built the core transaction evaluation pipeline and alert storage system. Added a `/api/pipeline/evaluate` endpoint that evaluates transactions against active user scenarios, applying threshold-based rules. Implemented a comprehensive Alert model, CRUD API, and alert stats tracking. Updated the dashboard to display live alert metrics instead of hardcoded data. When scenarios are triggered, alerts are automatically persisted to the database and surfaced to the user in real time.
+
+**Completed today:** Rule engine logic with threshold evaluation, pipeline controller and routes, Alert Mongoose model, alert management API (`GET`, `PATCH /resolve`, `DELETE`, `/stats`), alert service for frontend, dashboard integration with live alert counts and alert list display, parameter input UX fix (focus issue).
+
+**Tested:** End-to-end alert flow (create scenario → evaluate transaction → alert stored → dashboard updated), server tests passing, frontend build successful.
+
+**Next:** Build a dedicated Alerts management page, expand rule logic beyond amount thresholds, add real transaction data ingestion from payment APIs.
+
+**What I learned:**
+- How to build a rule evaluation engine with flexible parameter checking.
+- How to wire automatic alert persistence when rules trigger.
+- How to keep dashboard data real-time instead of using mocked data.
+- Importance of proper React key management to prevent input focus loss.
+
+---
+
 ## Development Summary
 
 | Day | Expected | Done | Challenges |
@@ -146,4 +181,6 @@ Updated the dashboard to link to the new scenario builder and refined the next-s
 | Day 3 | Integrate Tailwind into React client and style auth pages. | Installed Tailwind, configured PostCSS, imported Tailwind directives, and converted login/register UI to Tailwind utilities. | Wiring Tailwind into the Vite build and updating the auth UI without conflicting existing CSS. |
 | Day 4 | Protect auth routes, connect frontend login flow, and start dashboard scaffolding. | Implemented auth middleware and protected API routes, added Redux auth slice, wired UI auth flow, and scaffolded protected dashboard route. | Coordinating stateful auth flow across backend middleware and frontend route guards. |
 | Day 5 | Add scenario builder UI and local template persistence | Added `ScenarioBuilder` page, protected `/builder` route, dashboard link, and localStorage-backed scenario templates. | Backend persistence and pipeline integration remaining. |
+| Day 6 | Add backend scenario storage, connect frontend scenario CRUD, and document the feature end-to-end. | Added `Scenario` model, RESTful scenario CRUD API, frontend `scenarioService`, Redux `scenarioSlice`, list and form UI, parameter editing, and API docs. | Keeping the backend, frontend, and auth flow synchronized while expanding the feature set. |
+| Day 7 | Build rule engine, alert storage, and dashboard alert integration. | Added `/api/pipeline/evaluate` endpoint, Alert model and API, real-time dashboard metrics, threshold-based rule evaluation, and end-to-end alert flow. | Managing transaction evaluation state, ensuring alerts persist correctly, and maintaining React component performance. |
 

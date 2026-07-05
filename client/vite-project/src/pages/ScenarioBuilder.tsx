@@ -1,205 +1,135 @@
-import { useEffect, useMemo, useState } from 'react';
+/**
+ * Scenario Builder Page
+ * ====================
+ * Main page for managing financial scenarios
+ * 
+ * Shows list of scenarios and allows create/edit/delete
+ * Uses Redux for state management and communicates with backend API
+ */
+
+import { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-
-type Scenario = {
-  id: string;
-  name: string;
-  category: string;
-  condition: string;
-  threshold: string;
-  active: boolean;
-};
-
-const defaultForm = {
-  name: '',
-  category: 'Transactions',
-  condition: 'Amount >',
-  threshold: '10000',
-  active: true,
-};
+import type { RootState, AppDispatch } from '../store';
+import type { Scenario } from '../services/scenarioService';
+import { fetchScenarios } from '../store/scenarioSlice';
+import ScenarioList from '../components/scenarios/ScenarioList';
+import ScenarioForm from '../components/scenarios/ScenarioForm';
 
 const ScenarioBuilder = () => {
-  const [scenarios, setScenarios] = useState<Scenario[]>(() => {
-    const existing = localStorage.getItem('finguard-scenarios');
-    return existing ? JSON.parse(existing) : [];
-  });
-  const [form, setForm] = useState(defaultForm);
-  const [error, setError] = useState('');
+  const dispatch = useDispatch<AppDispatch>();
+  const { scenarios } = useSelector((state: RootState) => state.scenarios);
 
+  const [showForm, setShowForm] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
+
+  // Load scenarios on mount
   useEffect(() => {
-    localStorage.setItem('finguard-scenarios', JSON.stringify(scenarios));
-  }, [scenarios]);
+    dispatch(fetchScenarios());
+  }, [dispatch]);
 
-  const categoryOptions = useMemo(
-    () => ['Transactions', 'Logins', 'Alerts', 'Accounts'],
-    [],
-  );
+  const activeCount = scenarios.filter((s) => s.isActive).length;
 
-  const handleChange = (field: keyof typeof defaultForm, value: string | boolean) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    setError('');
+  const handleSelectScenario = (scenario: Scenario) => {
+    setSelectedScenario(scenario);
+    setShowForm(true);
   };
 
-  const handleAddScenario = () => {
-    if (!form.name.trim() || !form.condition.trim() || !form.threshold.trim()) {
-      setError('Please provide a name, condition, and threshold for the scenario.');
-      return;
-    }
-
-    const newScenario: Scenario = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: form.name.trim(),
-      category: form.category,
-      condition: form.condition.trim(),
-      threshold: form.threshold.trim(),
-      active: form.active,
-    };
-
-    setScenarios((prev) => [newScenario, ...prev]);
-    setForm(defaultForm);
+  const handleCreateNew = () => {
+    setSelectedScenario(null);
+    setShowForm(true);
   };
 
-  const activeCount = useMemo(
-    () => scenarios.filter((scenario) => scenario.active).length,
-    [scenarios],
-  );
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setSelectedScenario(null);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-10">
-      <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-10 shadow-xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto max-w-6xl">
+        {/* Header */}
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Scenario Builder</h1>
-            <p className="mt-2 text-slate-600">Create alert rule templates and manage scenario definitions for your monitoring pipeline.</p>
+            <h1 className="text-4xl font-bold text-slate-900">Scenario Builder</h1>
+            <p className="mt-2 text-slate-600">
+              Create and manage financial scenarios for planning and analysis
+            </p>
           </div>
           <Link
             to="/dashboard"
-            className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-700 font-medium hover:bg-slate-50 transition"
           >
-            Back to dashboard
+            ← Back to Dashboard
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-3">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-xl font-semibold text-slate-900">Scenarios</h2>
-            <p className="mt-3 text-slate-600">{scenarios.length} total rule templates</p>
-            <p className="mt-2 text-sm text-slate-500">{activeCount} active</p>
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4 mb-8">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-600">Total Scenarios</h3>
+            <p className="mt-2 text-3xl font-bold text-slate-900">{scenarios.length}</p>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-xl font-semibold text-slate-900">Categories</h2>
-            <ul className="mt-4 space-y-2 text-slate-700">
-              {categoryOptions.map((category) => (
-                <li key={category} className="rounded-2xl bg-white p-3 text-sm shadow-sm">{category}</li>
-              ))}
-            </ul>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-600">Active</h3>
+            <p className="mt-2 text-3xl font-bold text-green-600">{activeCount}</p>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-xl font-semibold text-slate-900">Why it matters</h2>
-            <p className="mt-3 text-slate-600">Guardians can define rules once and reuse them across transaction, login, and alert monitoring workflows.</p>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-sm font-medium text-slate-600">Inactive</h3>
+            <p className="mt-2 text-3xl font-bold text-slate-600">
+              {scenarios.length - activeCount}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-6 shadow-sm">
+            <h3 className="text-sm font-medium text-blue-600">Quick Start</h3>
+            <button
+              onClick={handleCreateNew}
+              className="mt-2 w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition"
+            >
+              + New Scenario
+            </button>
           </div>
         </div>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">New scenario template</h2>
-            {error && (
-              <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>
-            )}
-            <div className="mt-6 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => handleChange('name', e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                  placeholder="Example: High-value transfer rule"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Category</label>
-                <select
-                  value={form.category}
-                  onChange={(e) => handleChange('category', e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                >
-                  {categoryOptions.map((category) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Condition</label>
-                <input
-                  type="text"
-                  value={form.condition}
-                  onChange={(e) => handleChange('condition', e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                  placeholder="Example: Amount >"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Threshold</label>
-                <input
-                  type="text"
-                  value={form.threshold}
-                  onChange={(e) => handleChange('threshold', e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
-                  placeholder="Example: 10000"
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  id="active"
-                  type="checkbox"
-                  checked={form.active}
-                  onChange={(e) => handleChange('active', e.target.checked)}
-                  className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <label htmlFor="active" className="text-sm font-medium text-slate-700">Active</label>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddScenario}
-                className="inline-flex items-center justify-center rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
-              >
-                Save scenario template
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Saved scenario templates</h2>
-            <p className="mt-2 text-sm text-slate-600">These templates can later power alerting rules and transaction screening flows.</p>
-            <div className="mt-6 space-y-4">
-              {scenarios.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-slate-600">
-                  No scenarios created yet. Add your first rule template to get started.
-                </div>
-              ) : (
-                scenarios.map((scenario) => (
-                  <div key={scenario.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-lg font-semibold text-slate-900">{scenario.name}</p>
-                        <p className="mt-1 text-sm text-slate-600">{scenario.category} · {scenario.condition} {scenario.threshold}</p>
-                      </div>
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${scenario.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {scenario.active ? 'Active' : 'Inactive'}
-                      </span>
-                    </div>
+        {/* Scenario Type Breakdown */}
+        {scenarios.length > 0 && (
+          <div className="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+              Scenarios by Type
+            </h3>
+            <div className="grid gap-4 md:grid-cols-5">
+              {['retirement', 'investment', 'debt-payoff', 'savings', 'custom'].map((type) => {
+                const count = scenarios.filter((s) => s.type === type).length;
+                return (
+                  <div key={type} className="text-center p-4 bg-slate-50 rounded-lg">
+                    <p className="text-sm font-medium text-slate-600 capitalize mb-1">
+                      {type}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-900">{count}</p>
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Main Content - Scenario List */}
+        <ScenarioList onSelectScenario={handleSelectScenario} onCreateNew={handleCreateNew} />
+
+        {/* Scenario Form Modal */}
+        {showForm && (
+          <ScenarioForm
+            scenario={selectedScenario}
+            onClose={handleCloseForm}
+            onSuccess={() => {
+              setShowForm(false);
+              setSelectedScenario(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );

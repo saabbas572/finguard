@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "nodemon --exec ts-node src/index.ts"
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "test": "node --import ts-node/register --test src/**/*.test.ts"
   },
   "devDependencies": {
     "@types/cors": "^2.8.12",

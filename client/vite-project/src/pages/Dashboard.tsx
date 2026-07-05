@@ -1,28 +1,32 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/authSlice';
+import { fetchScenarios } from '../store/scenarioSlice';
 import type { RootState, AppDispatch } from '../store';
 import api from '../services/api';
+import { getAlertStatsAPI, getAlertsAPI } from '../services/alertService';
+import type { AlertStats, Alert } from '../services/alertService';
 
 const filters = [
-  { id: 'all', label: 'All activity', count: 26, description: 'All tracked events' },
-  { id: 'alerts', label: 'Alerts', count: 8, description: 'High-risk events flagged' },
-  { id: 'logins', label: 'Suspicious logins', count: 3, description: 'Potential account takeovers' },
-  { id: 'transactions', label: 'High-risk transactions', count: 5, description: 'Transactions requiring review' },
+  { id: 'all', label: 'All activity', count: 0, description: 'All tracked events' },
+  { id: 'alerts', label: 'Alerts', count: 0, description: 'High-risk events flagged' },
+  { id: 'unresolved', label: 'Unresolved', count: 0, description: 'Alerts pending review' },
+  { id: 'high', label: 'High severity', count: 0, description: 'Critical incidents' },
 ];
 
 const activityItems = [
   { id: 1, category: 'alerts', title: 'Rule threshold exceeded', details: 'Transaction of $12,400 flagged' },
-  { id: 2, category: 'logins', title: 'Unusual login location', details: 'Login from Berlin at 3:14 AM' },
-  { id: 3, category: 'transactions', title: 'Large withdrawal request', details: '$85,000 transfer pending review' },
-  { id: 4, category: 'alerts', title: 'Policy violation detected', details: 'Unapproved vendor payment' },
-  { id: 5, category: 'logins', title: 'Multiple failed sign-ins', details: '3 failed attempts within 5 min' },
+  { id: 2, category: 'unresolved', title: 'Unusual login location', details: 'Login from Berlin at 3:14 AM' },
+  { id: 3, category: 'alerts', title: 'Large withdrawal request', details: '$85,000 transfer pending review' },
 ];
 
 const Dashboard = () => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector((state: RootState) => state.auth.user);
+  const scenarios = useSelector((state: RootState) => state.scenarios.scenarios);
   const [profile, setProfile] = useState<{ name: string; email: string; role: string } | null>(null);
+  const [alertStats, setAlertStats] = useState<AlertStats | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
 
@@ -36,13 +40,31 @@ const Dashboard = () => {
       }
     };
 
-    fetchProfile();
-  }, []);
+    const fetchAlerts = async () => {
+      try {
+        const [stats, alertsData] = await Promise.all([
+          getAlertStatsAPI(),
+          getAlertsAPI({ sort: 'newest' }),
+        ]);
+        setAlertStats(stats);
+        setAlerts(alertsData);
+      } catch (err) {
+        console.error('Failed to fetch alerts:', err);
+      }
+    };
 
-  const filteredItems = useMemo(
-    () => activityItems.filter((item) => selectedFilter === 'all' || item.category === selectedFilter),
-    [selectedFilter],
-  );
+    void dispatch(fetchScenarios());
+    fetchProfile();
+    fetchAlerts();
+  }, [dispatch]);
+
+  const filteredItems = useMemo(() => {
+    if (selectedFilter === 'all') return alerts;
+    if (selectedFilter === 'alerts') return alerts.filter((a) => !a.isResolved);
+    if (selectedFilter === 'unresolved') return alerts.filter((a) => !a.isResolved);
+    if (selectedFilter === 'high') return alerts.filter((a) => a.severity === 'high');
+    return alerts;
+  }, [selectedFilter, alerts]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -90,18 +112,31 @@ const Dashboard = () => {
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-xl font-semibold text-slate-900">Next steps</h2>
-            <ul className="mt-4 space-y-3 text-slate-700">
-              <li>Build and save scenario builder templates</li>
-              <li>Create alert rule templates</li>
-              <li>Add dashboard charts for flagged activity</li>
-            </ul>
+            <h2 className="text-xl font-semibold text-slate-900">Scenario summary</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-500">Total</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">{scenarios.length}</p>
+              </div>
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-500">Active</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">{scenarios.filter((item) => item.isActive).length}</p>
+              </div>
+              <div className="rounded-2xl bg-white p-4 shadow-sm">
+                <p className="text-sm text-slate-500">Custom</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-900">{scenarios.filter((item) => item.type === 'custom').length}</p>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="mt-10">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {filters.map((filter) => (
+            {[
+              { id: 'all', label: 'All alerts', count: alertStats?.total ?? 0, description: 'All tracked alerts' },
+              { id: 'alerts', label: 'Unresolved', count: alertStats?.unresolved ?? 0, description: 'Alerts pending review' },
+              { id: 'high', label: 'High severity', count: alertStats?.high ?? 0, description: 'Critical incidents' },
+            ].map((filter) => (
               <button
                 key={filter.id}
                 type="button"
@@ -117,23 +152,43 @@ const Dashboard = () => {
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <h2 className="text-xl font-semibold text-slate-900">Filtered activity</h2>
+              <h2 className="text-xl font-semibold text-slate-900">Recent alerts</h2>
               <p className="text-sm text-slate-600">
                 {selectedFilter === 'all'
-                  ? 'Showing all events'
-                  : `Showing ${filters.find((filter) => filter.id === selectedFilter)?.label.toLowerCase()}`}
+                  ? `Showing all ${alerts.length} alerts`
+                  : `Showing ${filteredItems.length} ${selectedFilter === 'high' ? 'high severity' : 'unresolved'} alerts`}
               </p>
             </div>
 
             <div className="mt-6 space-y-4">
-              {filteredItems.map((item) => (
-                <div key={item.id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-sm text-slate-600">{item.details}</p>
+              {filteredItems.slice(0, 5).map((alert) => (
+                <div key={alert._id} className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-900">{alert.scenarioTitle}</p>
+                      <p className="mt-1 text-sm text-slate-600">{alert.reason}</p>
+                      {alert.transactionData?.amount && (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Amount: ${Number(alert.transactionData.amount).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                        alert.severity === 'high'
+                          ? 'bg-red-100 text-red-700'
+                          : alert.severity === 'medium'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {alert.severity}
+                    </span>
+                  </div>
                 </div>
               ))}
               {filteredItems.length === 0 && (
-                <p className="text-sm text-slate-600">No matching events found for this filter.</p>
+                <p className="text-sm text-slate-600">No alerts found.</p>
               )}
             </div>
           </div>

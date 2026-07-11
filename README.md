@@ -20,7 +20,7 @@ MASc Software Engineering — Memorial University of Newfoundland
 
 ## Planned Stack
 
-React · TypeScript · Redux Toolkit · Vite · Node.js · Express · 
+React · TypeScript · Vite · Node.js · Express · 
 MongoDB · Python · FastAPI · Docker · Sentry · AWS · GitHub Actions
 
 ---

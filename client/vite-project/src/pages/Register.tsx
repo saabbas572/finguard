@@ -1,15 +1,13 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { register, clearError } from '../store/authSlice';
-import type { AppDispatch, RootState } from '../store';
+import { useAuth } from '../context/AuthContext';
 
 const emailRegex = /^\S+@\S+\.\S+$/;
 
 const Register = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { register, loading, error, clearError } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [submitted, setSubmitted] = useState(false);
 
@@ -39,7 +37,7 @@ const Register = () => {
 
   const handleChange = (field: 'name' | 'email' | 'password', value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (error) dispatch(clearError());
+    if (error) clearError();
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -47,8 +45,8 @@ const Register = () => {
     setSubmitted(true);
     if (hasFormErrors) return;
 
-    const result = await dispatch(register(form));
-    if (register.fulfilled.match(result)) navigate('/dashboard');
+    const isRegistered = await register(form);
+    if (isRegistered) navigate('/dashboard');
   };
 
   return (

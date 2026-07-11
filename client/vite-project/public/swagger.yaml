@@ -1,0 +1,1058 @@
+openapi: 3.0.0
+info:
+  title: FINGAURD API
+  description: |
+    Comprehensive API documentation for the FINGAURD financial rule engine and alert system.
+    
+    ## Overview
+    FINGAURD is a rule-based transaction evaluation engine that monitors financial activities against configured scenarios and generates security alerts.
+    
+    ## Authentication
+    All endpoints (except /auth/login and /auth/register) require Bearer token authentication.
+    
+    **Authentication Flow:**
+    1. Register with POST /api/auth/register or Login with POST /api/auth/login
+    2. Receive JWT token in response
+    3. Include token in Authorization header: `Authorization: Bearer <token>`
+    4. Token expires in 7 days
+    
+    ## Base URL
+    ```
+    http://localhost:5000/api
+    ```
+    
+    ## Key Concepts
+    
+    ### Scenarios
+    Rules that define what transactions should trigger alerts. Each scenario can check:
+    - **Amount threshold**: Flag if transaction exceeds limit
+    - **Country restrictions**: Flag if transaction originates from blocked country
+    - **Transaction type restrictions**: Flag if transaction type is blocked
+    
+    ### Alerts
+    Security alerts automatically created when a transaction matches an active scenario.
+    Each alert includes:
+    - Triggered scenario title
+    - Reason(s) why it triggered
+    - Full transaction data
+    - Severity level (low/medium/high)
+    - Resolution status
+    
+    ### Pipeline
+    The core evaluation engine that checks transactions against all active scenarios and generates alerts.
+  version: 1.0.0
+  contact:
+    name: FINGAURD Support
+    email: support@fingaurd.dev
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:5000/api
+    description: Local Development
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from login/register endpoint.
+        Format: Authorization: Bearer {token}
+
+  schemas:
+    # ==================== User & Auth ====================
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+          description: MongoDB ObjectId
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        role:
+          type: string
+          enum: [analyst, admin, viewer]
+          example: analyst
+      required:
+        - name
+        - email
+        - role
+
+    AuthResponse:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        token:
+          type: string
+          description: JWT token valid for 7 days
+      required:
+        - _id
+        - name
+        - email
+        - token
+
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Doe
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: securePassword123
+        role:
+          type: string
+          enum: [analyst, admin, viewer]
+          example: analyst
+      required:
+        - name
+        - email
+        - password
+        - role
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: john@example.com
+        password:
+          type: string
+          format: password
+          example: securePassword123
+      required:
+        - email
+        - password
+
+    # ==================== Scenarios ====================
+    Scenario:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          description: User who owns this scenario
+        title:
+          type: string
+          example: High-Risk Country Restriction
+        description:
+          type: string
+          example: Block all transactions from sanctioned countries
+        type:
+          type: string
+          enum: [retirement, investment, debt-payoff, savings, custom]
+          example: custom
+        parameters:
+          type: object
+          description: Rule condition parameters
+          properties:
+            amountThreshold:
+              type: number
+              description: Flag if transaction amount exceeds this (e.g., 5000)
+              example: 5000
+            blockedCountries:
+              type: array
+              items:
+                type: string
+              description: List of country codes to block
+              example: ["IR", "SY", "KP"]
+            blockedTransactionTypes:
+              type: array
+              items:
+                type: string
+              description: List of transaction types to block
+              example: ["crypto_transfer", "wire"]
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - _id
+        - userId
+        - title
+        - type
+        - parameters
+
+    ScenarioCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Large Transfer Alert
+        description:
+          type: string
+          example: Alert on transfers exceeding $5000
+        type:
+          type: string
+          enum: [retirement, investment, debt-payoff, savings, custom]
+          example: custom
+        parameters:
+          type: object
+          description: Rule condition parameters
+          example:
+            amountThreshold: 5000
+            blockedCountries: ["CN"]
+      required:
+        - title
+        - type
+        - parameters
+
+    ScenarioUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [retirement, investment, debt-payoff, savings, custom]
+        parameters:
+          type: object
+        isActive:
+          type: boolean
+
+    # ==================== Alerts ====================
+    Alert:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        scenarioTitle:
+          type: string
+          description: Title of the scenario that triggered this alert
+          example: High-Risk Country Restriction
+        reason:
+          type: string
+          description: Concatenated reasons for triggering (if multiple conditions matched)
+          example: "amount threshold exceeded | transaction from blocked country: IR"
+        transactionData:
+          type: object
+          description: Complete transaction payload that triggered the alert
+          properties:
+            amount:
+              type: number
+              example: 15000
+            type:
+              type: string
+              example: transfer
+            country:
+              type: string
+              example: IR
+        severity:
+          type: string
+          enum: [low, medium, high]
+          default: high
+          example: high
+        isResolved:
+          type: boolean
+          default: false
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - _id
+        - userId
+        - scenarioTitle
+        - reason
+        - severity
+
+    AlertStats:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total alerts for user
+          example: 42
+        unresolved:
+          type: integer
+          description: Number of unresolved alerts
+          example: 15
+        high:
+          type: integer
+          description: Number of high-severity alerts
+          example: 8
+      required:
+        - total
+        - unresolved
+        - high
+
+    # ==================== Pipeline ====================
+    Transaction:
+      type: object
+      description: Transaction data to evaluate against scenarios
+      properties:
+        amount:
+          type: number
+          example: 15000
+        type:
+          type: string
+          example: transfer
+        country:
+          type: string
+          description: Country code or full name
+          example: US
+      required:
+        - amount
+        - type
+        - country
+
+    PipelineMatch:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Title of triggered scenario
+          example: High-Risk Country Restriction
+        reason:
+          type: string
+          description: Concatenated reasons why scenario triggered
+          example: "amount threshold exceeded | transaction from blocked country: IR"
+
+    PipelineEvaluationResult:
+      type: object
+      properties:
+        triggeredScenarios:
+          type: array
+          items:
+            $ref: '#/components/schemas/PipelineMatch'
+          description: List of scenarios that matched
+        summary:
+          type: object
+          properties:
+            totalChecked:
+              type: integer
+              description: Total scenarios evaluated
+              example: 5
+            triggeredCount:
+              type: integer
+              description: Number of scenarios that triggered
+              example: 2
+
+    # ==================== Error Responses ====================
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+
+paths:
+  # ===================== AUTHENTICATION =====================
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user
+      description: |
+        Create a new user account and receive JWT token for authentication.
+        
+        **Password requirements:** Minimum 6 characters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                _id: "507f1f77bcf86cd799439011"
+                name: "John Doe"
+                email: "john@example.com"
+                role: "analyst"
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDdmMWY3N2JjZjg2Y2Q3OTk0MzkwMTEiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwMjAwMDAwMH0.abc123def456ghi789jkl012mno345pqr678stu901"
+        '400':
+          description: Email already registered or invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Email already registered"
+        '500':
+          description: Server error during registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: |
+        Authenticate with email and password to receive JWT token.
+        
+        **Token expiration:** 7 days
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                _id: "507f1f77bcf86cd799439011"
+                name: "John Doe"
+                email: "john@example.com"
+                role: "analyst"
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1MDdmMWY3N2JjZjg2Y2Q3OTk0MzkwMTEiLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MTcwMjAwMDAwMH0.abc123def456ghi789jkl012mno345pqr678stu901"
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Invalid credentials"
+        '500':
+          description: Server error during login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ===================== SCENARIOS =====================
+  /scenarios:
+    post:
+      tags:
+        - Scenarios
+      summary: Create new scenario
+      description: |
+        Create a new rule scenario for the authenticated user.
+        
+        **Parameters guide:**
+        - `amountThreshold`: Numeric value, e.g., 5000
+        - `blockedCountries`: Array or comma-separated string of country codes, e.g., ["IR", "SY"]
+        - `blockedTransactionTypes`: Array or comma-separated string of types, e.g., ["crypto_transfer", "wire"]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioCreateRequest'
+            examples:
+              amountThreshold:
+                summary: Amount-based rule
+                value:
+                  title: Large Transfer Alert
+                  description: Alert on transfers exceeding $5000
+                  type: custom
+                  parameters:
+                    amountThreshold: 5000
+              countryBased:
+                summary: Country restriction rule
+                value:
+                  title: High-Risk Country Restriction
+                  description: Block transactions from sanctioned countries
+                  type: custom
+                  parameters:
+                    blockedCountries: ["IR", "SY", "KP", "DPRK"]
+              multiCondition:
+                summary: Multiple conditions combined
+                value:
+                  title: High-Risk Crypto Rule
+                  description: Block large crypto transfers from high-risk countries
+                  type: custom
+                  parameters:
+                    amountThreshold: 10000
+                    blockedCountries: ["CN", "RU"]
+                    blockedTransactionTypes: ["crypto_transfer"]
+      responses:
+        '201':
+          description: Scenario created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '400':
+          description: Title and type are required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to create scenario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      tags:
+        - Scenarios
+      summary: Get all scenarios
+      description: |
+        Retrieve all scenarios for the authenticated user.
+        
+        **Query parameters:**
+        - `isActive`: true/false - Filter by active status
+        - `type`: Scenario type to filter by
+        - `sort`: 'newest' or 'oldest' - Sort by creation date
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [retirement, investment, debt-payoff, savings, custom]
+          description: Filter by scenario type
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, oldest]
+          description: Sort order by creation date
+      responses:
+        '200':
+          description: List of scenarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Scenario'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to fetch scenarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /scenarios/{id}:
+    get:
+      tags:
+        - Scenarios
+      summary: Get scenario by ID
+      description: Retrieve a specific scenario by its ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Scenario MongoDB ObjectId
+      responses:
+        '200':
+          description: Scenario found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '404':
+          description: Scenario not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Scenarios
+      summary: Update scenario
+      description: Update an existing scenario (user must own it)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Scenario MongoDB ObjectId
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioUpdateRequest'
+      responses:
+        '200':
+          description: Scenario updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '404':
+          description: Scenario not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to update this scenario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Scenarios
+      summary: Delete scenario
+      description: Delete a scenario (user must own it)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Scenario MongoDB ObjectId
+      responses:
+        '200':
+          description: Scenario deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Scenario deleted"
+        '404':
+          description: Scenario not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to delete this scenario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /scenarios/{id}/toggle:
+    patch:
+      tags:
+        - Scenarios
+      summary: Toggle scenario active status
+      description: Enable or disable a scenario
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Scenario MongoDB ObjectId
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isActive:
+                  type: boolean
+              required:
+                - isActive
+      responses:
+        '200':
+          description: Scenario status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '404':
+          description: Scenario not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to update this scenario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ===================== PIPELINE =====================
+  /pipeline/evaluate:
+    post:
+      tags:
+        - Pipeline
+      summary: Evaluate transaction against scenarios
+      description: |
+        Evaluate a transaction against all active scenarios for the user.
+        
+        Automatically creates Alert records for any triggered scenarios.
+        
+        **How it works:**
+        1. User submits transaction data
+        2. Pipeline fetches all active scenarios for that user
+        3. Each scenario's rules are evaluated against the transaction
+        4. Any matches are returned in `triggeredScenarios` array
+        5. Alerts are automatically created in the database for triggered scenarios
+        
+        **Multi-condition matching:**
+        If a scenario has multiple parameters and all conditions match, they are concatenated in the `reason` field with "|" separator.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transaction:
+                  $ref: '#/components/schemas/Transaction'
+              required:
+                - transaction
+            examples:
+              simple:
+                summary: Simple transaction
+                value:
+                  transaction:
+                    amount: 6000
+                    type: transfer
+                    country: US
+              highRisk:
+                summary: High-risk transaction
+                value:
+                  transaction:
+                    amount: 15000
+                    type: crypto_transfer
+                    country: CN
+              sanctioned:
+                summary: Sanctioned country transaction
+                value:
+                  transaction:
+                    amount: 5000
+                    type: transfer
+                    country: IR
+      responses:
+        '200':
+          description: Evaluation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineEvaluationResult'
+              examples:
+                noMatch:
+                  summary: No scenarios triggered
+                  value:
+                    triggeredScenarios: []
+                    summary:
+                      totalChecked: 3
+                      triggeredCount: 0
+                singleMatch:
+                  summary: One scenario triggered
+                  value:
+                    triggeredScenarios:
+                      - title: Large Transfer Alert
+                        reason: amount threshold exceeded
+                    summary:
+                      totalChecked: 3
+                      triggeredCount: 1
+                multiMatch:
+                  summary: Multiple conditions triggered
+                  value:
+                    triggeredScenarios:
+                      - title: High-Risk Crypto Rule
+                        reason: "amount threshold exceeded | transaction from blocked country: CN | blocked transaction type: crypto_transfer"
+                    summary:
+                      totalChecked: 5
+                      triggeredCount: 1
+        '400':
+          description: Transaction payload is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to evaluate transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ===================== ALERTS =====================
+  /alerts:
+    get:
+      tags:
+        - Alerts
+      summary: Get all alerts
+      description: |
+        Retrieve all alerts for the authenticated user.
+        
+        **Query parameters:**
+        - `isResolved`: true/false - Filter by resolution status
+        - `severity`: low/medium/high - Filter by severity level
+        - `sort`: 'newest' or 'oldest' - Sort by creation date (default: newest)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: isResolved
+          in: query
+          schema:
+            type: boolean
+          description: Filter by resolution status
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+          description: Filter by severity level
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [newest, oldest]
+          description: Sort order by creation date
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to fetch alerts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /alerts/stats:
+    get:
+      tags:
+        - Alerts
+      summary: Get alert statistics
+      description: |
+        Get summary statistics for alerts:
+        - Total alerts count
+        - Unresolved alerts count
+        - High-severity alerts count
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Alert statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertStats'
+              example:
+                total: 42
+                unresolved: 15
+                high: 8
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Failed to fetch alert stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /alerts/{id}/resolve:
+    patch:
+      tags:
+        - Alerts
+      summary: Mark alert as resolved
+      description: Mark an alert as resolved (user must own it)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Alert MongoDB ObjectId
+      responses:
+        '200':
+          description: Alert marked as resolved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to resolve this alert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /alerts/{id}:
+    delete:
+      tags:
+        - Alerts
+      summary: Delete alert
+      description: Delete an alert (user must own it)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Alert MongoDB ObjectId
+      responses:
+        '200':
+          description: Alert deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Alert deleted"
+        '404':
+          description: Alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not authorized to delete this alert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+tags:
+  - name: Authentication
+    description: User registration and login
+  - name: Scenarios
+    description: Create and manage rule scenarios
+  - name: Pipeline
+    description: Evaluate transactions against scenarios
+  - name: Alerts
+    description: View and manage security alerts

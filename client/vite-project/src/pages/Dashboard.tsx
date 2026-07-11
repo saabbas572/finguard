@@ -1,29 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../store/authSlice';
-import { fetchScenarios } from '../store/scenarioSlice';
-import type { RootState, AppDispatch } from '../store';
 import api from '../services/api';
 import { getAlertStatsAPI, getAlertsAPI } from '../services/alertService';
 import type { AlertStats, Alert } from '../services/alertService';
-
-const filters = [
-  { id: 'all', label: 'All activity', count: 0, description: 'All tracked events' },
-  { id: 'alerts', label: 'Alerts', count: 0, description: 'High-risk events flagged' },
-  { id: 'unresolved', label: 'Unresolved', count: 0, description: 'Alerts pending review' },
-  { id: 'high', label: 'High severity', count: 0, description: 'Critical incidents' },
-];
-
-const activityItems = [
-  { id: 1, category: 'alerts', title: 'Rule threshold exceeded', details: 'Transaction of $12,400 flagged' },
-  { id: 2, category: 'unresolved', title: 'Unusual login location', details: 'Login from Berlin at 3:14 AM' },
-  { id: 3, category: 'alerts', title: 'Large withdrawal request', details: '$85,000 transfer pending review' },
-];
+import { getScenariosAPI } from '../services/scenarioService';
+import type { Scenario } from '../services/scenarioService';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const scenarios = useSelector((state: RootState) => state.scenarios.scenarios);
+  const { user, logout } = useAuth();
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [profile, setProfile] = useState<{ name: string; email: string; role: string } | null>(null);
   const [alertStats, setAlertStats] = useState<AlertStats | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -53,10 +38,19 @@ const Dashboard = () => {
       }
     };
 
-    void dispatch(fetchScenarios());
+    const fetchScenarios = async () => {
+      try {
+        const data = await getScenariosAPI();
+        setScenarios(data);
+      } catch (err) {
+        console.error('Failed to fetch scenarios:', err);
+      }
+    };
+
+    void fetchScenarios();
     fetchProfile();
     fetchAlerts();
-  }, [dispatch]);
+  }, []);
 
   const filteredItems = useMemo(() => {
     if (selectedFilter === 'all') return alerts;
@@ -67,7 +61,7 @@ const Dashboard = () => {
   }, [selectedFilter, alerts]);
 
   const handleLogout = () => {
-    dispatch(logout());
+    logout();
   };
 
   return (
@@ -84,6 +78,12 @@ const Dashboard = () => {
               className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               Go to scenario builder
+            </a>
+            <a
+              href="/alerts"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              View alerts
             </a>
             <button
               type="button"

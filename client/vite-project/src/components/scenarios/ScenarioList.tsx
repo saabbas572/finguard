@@ -5,53 +5,60 @@
  * Allows user to select, toggle, or delete scenarios
  */
 
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  fetchScenarios,
-  deleteScenario,
-  toggleScenario,
-  selectScenario,
-} from '../../store/scenarioSlice';
-import type { AppDispatch, RootState } from '../../store';
+import { useMemo, useState } from 'react';
 import type { Scenario } from '../../services/scenarioService';
+import { deleteScenarioAPI, toggleScenarioAPI } from '../../services/scenarioService';
 
 interface ScenarioListProps {
+  scenarios: Scenario[];
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => Promise<void>;
   onSelectScenario: (scenario: Scenario) => void;
   onCreateNew: () => void;
 }
 
-const ScenarioList = ({ onSelectScenario, onCreateNew }: ScenarioListProps) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { scenarios, loading, error } = useSelector((state: RootState) => state.scenarios);
+const ScenarioList = ({
+  scenarios,
+  loading,
+  error,
+  onRefresh,
+  onSelectScenario,
+  onCreateNew,
+}: ScenarioListProps) => {
   const [filterType, setFilterType] = useState<string>('all');
   const [filterActive, setFilterActive] = useState<string>('all');
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Load scenarios on component mount
-  useEffect(() => {
-    const filters: any = {};
+  const filteredScenarios = useMemo(() => {
+    return scenarios.filter((scenario) => {
+      if (filterType !== 'all' && scenario.type !== filterType) return false;
+      if (filterActive === 'active' && !scenario.isActive) return false;
+      if (filterActive === 'inactive' && scenario.isActive) return false;
+      return true;
+    });
+  }, [scenarios, filterType, filterActive]);
 
-    if (filterType !== 'all') {
-      filters.type = filterType;
-    }
-
-    if (filterActive === 'active') {
-      filters.isActive = true;
-    } else if (filterActive === 'inactive') {
-      filters.isActive = false;
-    }
-
-    dispatch(fetchScenarios(filters));
-  }, [dispatch, filterType, filterActive]);
-
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this scenario?')) {
-      dispatch(deleteScenario(id));
+      try {
+        await deleteScenarioAPI(id);
+        setActionError(null);
+        await onRefresh();
+      } catch (err: any) {
+        setActionError(err.message || 'Failed to delete scenario');
+      }
     }
   };
 
-  const handleToggle = (id: string) => {
-    dispatch(toggleScenario(id));
+  const handleToggle = async (id: string) => {
+    try {
+      await toggleScenarioAPI(id);
+      setActionError(null);
+      await onRefresh();
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to toggle scenario');
+    }
   };
 
   if (loading && scenarios.length === 0) {
@@ -113,16 +120,16 @@ const ScenarioList = ({ onSelectScenario, onCreateNew }: ScenarioListProps) => {
         </div>
 
         {/* Error Message */}
-        {error && (
+        {(error || actionError) && (
           <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded text-sm">
-            {error}
+            {error || actionError}
           </div>
         )}
       </div>
 
       {/* Scenarios List */}
       <div className="divide-y divide-slate-200">
-        {scenarios.length === 0 ? (
+        {filteredScenarios.length === 0 ? (
           <div className="p-6 text-center text-slate-500">
             <p className="mb-4">No scenarios found</p>
             <button
@@ -133,7 +140,7 @@ const ScenarioList = ({ onSelectScenario, onCreateNew }: ScenarioListProps) => {
             </button>
           </div>
         ) : (
-          scenarios.map((scenario) => (
+          filteredScenarios.map((scenario) => (
             <div
               key={scenario._id}
               className="p-6 hover:bg-slate-50 transition cursor-pointer"

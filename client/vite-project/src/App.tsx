@@ -1,15 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { store } from './store';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import ScenarioBuilder from './pages/ScenarioBuilder';
+import Alerts from './pages/Alerts';
+import Swagger from './pages/Swagger';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
   return (
-    <Provider store={store}>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -20,10 +21,14 @@ function App() {
           <Route path="/builder" element={
             <ProtectedRoute><ScenarioBuilder /></ProtectedRoute>
           } />
+          <Route path="/alerts" element={
+            <ProtectedRoute><Alerts /></ProtectedRoute>
+          } />
+          <Route path="/swagger" element={<Swagger />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
-    </Provider>
+    </AuthProvider>
   );
 }
 

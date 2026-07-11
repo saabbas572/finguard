@@ -1,15 +1,12 @@
 import { FormEvent, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { login, clearError } from '../store/authSlice';
-import type { AppDispatch, RootState } from '../store';
+import { useAuth } from '../context/AuthContext';
 
 const emailRegex = /^\S+@\S+\.\S+$/;
 
 const Login = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { login, loading, error, clearError } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [submitted, setSubmitted] = useState(false);
 
@@ -35,7 +32,7 @@ const Login = () => {
 
   const handleChange = (field: 'email' | 'password', value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (error) dispatch(clearError());
+    if (error) clearError();
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -43,8 +40,8 @@ const Login = () => {
     setSubmitted(true);
     if (hasFormErrors) return;
 
-    const result = await dispatch(login(form));
-    if (login.fulfilled.match(result)) navigate('/dashboard');
+    const isLoggedIn = await login(form);
+    if (isLoggedIn) navigate('/dashboard');
   };
 
   return (

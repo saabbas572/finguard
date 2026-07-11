@@ -1,0 +1,839 @@
+{
+  "info": {
+    "_postman_id": "fingaurd-api-collection",
+    "name": "FINGAURD API Collection",
+    "description": "Complete Postman collection for FINGAURD API endpoints. Import this file into Postman for easy testing.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.environment.set('userId', jsonData._id);",
+                  "    console.log('Token saved:', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"securePassword123\",\n  \"role\": \"analyst\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/register",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.environment.set('userId', jsonData._id);",
+                  "    console.log('Token saved:', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scenarios",
+      "item": [
+        {
+          "name": "Create Scenario - Amount Threshold",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('scenarioId', jsonData._id);",
+                  "    console.log('Scenario created:', jsonData._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Large Transfer Alert\",\n  \"description\": \"Alert on transfers exceeding $5000\",\n  \"type\": \"custom\",\n  \"parameters\": {\n    \"amountThreshold\": 5000\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Scenario - Country Block",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('scenarioId2', jsonData._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"High-Risk Country Restriction\",\n  \"description\": \"Block transactions from sanctioned countries\",\n  \"type\": \"custom\",\n  \"parameters\": {\n    \"blockedCountries\": [\"IR\", \"SY\", \"KP\", \"DPRK\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Scenario - Transaction Type Block",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('scenarioId3', jsonData._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Block Crypto Transfers\",\n  \"description\": \"Block cryptocurrency and wire transfers\",\n  \"type\": \"custom\",\n  \"parameters\": {\n    \"blockedTransactionTypes\": [\"crypto_transfer\", \"wire\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Scenario - Multi-Condition",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('scenarioId4', jsonData._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"High-Risk Crypto Rule\",\n  \"description\": \"Block large crypto transfers from high-risk countries\",\n  \"type\": \"custom\",\n  \"parameters\": {\n    \"amountThreshold\": 10000,\n    \"blockedCountries\": [\"CN\", \"RU\"],\n    \"blockedTransactionTypes\": [\"crypto_transfer\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Scenarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scenario by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios/{{scenarioId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios",
+                "{{scenarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Scenario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Large Transfer Alert\",\n  \"parameters\": {\n    \"amountThreshold\": 7500\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios/{{scenarioId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios",
+                "{{scenarioId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Scenario Active Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios/{{scenarioId}}/toggle",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios",
+                "{{scenarioId}}",
+                "toggle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Scenario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/scenarios/{{scenarioId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "scenarios",
+                "{{scenarioId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Pipeline",
+      "item": [
+        {
+          "name": "Evaluate Transaction - No Match",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": {\n    \"amount\": 2000,\n    \"type\": \"transfer\",\n    \"country\": \"US\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/pipeline/evaluate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "pipeline",
+                "evaluate"
+              ]
+            },
+            "description": "This transaction should NOT trigger any scenarios (amount below threshold, country not blocked)"
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Transaction - Amount Threshold Triggered",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": {\n    \"amount\": 6000,\n    \"type\": \"transfer\",\n    \"country\": \"US\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/pipeline/evaluate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "pipeline",
+                "evaluate"
+              ]
+            },
+            "description": "This transaction SHOULD trigger the 'Large Transfer Alert' scenario (amount 6000 >= 5000 threshold)"
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Transaction - Country Block",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": {\n    \"amount\": 100,\n    \"type\": \"transfer\",\n    \"country\": \"IR\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/pipeline/evaluate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "pipeline",
+                "evaluate"
+              ]
+            },
+            "description": "This transaction SHOULD trigger the 'High-Risk Country Restriction' scenario (country IR is blocked)"
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Transaction - Type Block",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": {\n    \"amount\": 500,\n    \"type\": \"crypto_transfer\",\n    \"country\": \"US\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/pipeline/evaluate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "pipeline",
+                "evaluate"
+              ]
+            },
+            "description": "This transaction SHOULD trigger the 'Block Crypto Transfers' scenario (type crypto_transfer is blocked)"
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Transaction - Multiple Conditions Match",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction\": {\n    \"amount\": 15000,\n    \"type\": \"crypto_transfer\",\n    \"country\": \"CN\"\n  }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/pipeline/evaluate",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "pipeline",
+                "evaluate"
+              ]
+            },
+            "description": "This transaction SHOULD trigger the 'High-Risk Crypto Rule' scenario. ALL THREE conditions match: amount (15000 >= 10000), country (CN is blocked), type (crypto_transfer is blocked)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Alerts",
+      "item": [
+        {
+          "name": "Get All Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/alerts",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unresolved Alerts Only",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/alerts?isResolved=false&sort=newest",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts"
+              ],
+              "query": [
+                {
+                  "key": "isResolved",
+                  "value": "false"
+                },
+                {
+                  "key": "sort",
+                  "value": "newest"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get High Severity Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/alerts?severity=high",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts"
+              ],
+              "query": [
+                {
+                  "key": "severity",
+                  "value": "high"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Alert Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/alerts/stats",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resolve Alert",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/alerts/{{alertId}}/resolve",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts",
+                "{{alertId}}",
+                "resolve"
+              ]
+            },
+            "description": "Mark an alert as resolved. Replace {{alertId}} with an actual alert ID from the Get All Alerts response."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Alert",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/alerts/{{alertId}}",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "5000",
+              "path": [
+                "api",
+                "alerts",
+                "{{alertId}}"
+              ]
+            },
+            "description": "Delete an alert. Replace {{alertId}} with an actual alert ID from the Get All Alerts response."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scenarioId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scenarioId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scenarioId3",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scenarioId4",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "alertId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

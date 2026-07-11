@@ -3,6 +3,7 @@ import Scenario from '../models/Scenario';
 import Alert from '../models/Alert';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { evaluateTransactionAgainstScenarios } from '../utils/pipeline';
+import { ingestTransactions } from '../utils/transactionIngestion';
 
 export const evaluateTransaction = async (
   req: AuthRequest,
@@ -34,7 +35,14 @@ export const evaluateTransaction = async (
       await Alert.insertMany(alerts);
     }
 
-    res.status(200).json(result);
+    const ingestedTransactions = ingestTransactions();
+    const ingestedPayload = {
+      result,
+      ingestedTransactions,
+      source: 'sample-ingestion',
+    };
+
+    res.status(200).json(ingestedPayload);
   } catch (error: any) {
     console.error('Pipeline evaluation error:', error);
     res.status(500).json({ message: 'Failed to evaluate transaction', error: error.message });

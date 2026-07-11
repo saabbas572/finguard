@@ -6,12 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import {
-  createScenario,
-  updateScenario,
-} from '../../store/scenarioSlice';
-import type { AppDispatch } from '../../store';
+import { createScenarioAPI, updateScenarioAPI } from '../../services/scenarioService';
 import type { Scenario } from '../../services/scenarioService';
 
 interface ScenarioFormProps {
@@ -21,7 +16,6 @@ interface ScenarioFormProps {
 }
 
 const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
-  const dispatch = useDispatch<AppDispatch>();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: scenario?.title || '',
@@ -81,6 +75,16 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
     });
   };
 
+  const updateRuleParameter = (key: string, value: string) => {
+    setFormData({
+      ...formData,
+      parameters: {
+        ...formData.parameters,
+        [key]: value,
+      },
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -93,27 +97,20 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
     try {
       if (scenario) {
         // Update existing scenario
-        await dispatch(
-          updateScenario({
-            id: scenario._id,
-            updates: {
-              title: formData.title,
-              description: formData.description,
-              type: formData.type,
-              parameters: formData.parameters,
-            },
-          })
-        ).unwrap();
+        await updateScenarioAPI(scenario._id, {
+          title: formData.title,
+          description: formData.description,
+          type: formData.type,
+          parameters: formData.parameters,
+        });
       } else {
         // Create new scenario
-        await dispatch(
-          createScenario({
-            title: formData.title,
-            description: formData.description,
-            type: formData.type,
-            parameters: formData.parameters,
-          })
-        ).unwrap();
+        await createScenarioAPI({
+          title: formData.title,
+          description: formData.description,
+          type: formData.type,
+          parameters: formData.parameters,
+        });
       }
 
       onSuccess?.();
@@ -217,6 +214,71 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
               <option value="debt-payoff">Debt Payoff</option>
               <option value="savings">Savings Goal</option>
             </select>
+          </div>
+
+          {/* Rule Configuration */}
+          <div>
+            <label className="block text-sm font-medium text-slate-900 mb-2">
+              Rule Configuration
+            </label>
+            <div className="bg-slate-50 border border-slate-300 rounded-lg p-4 space-y-3">
+              <div className="text-sm text-slate-600">
+                <p className="font-medium mb-1">Use rule-specific fields for the evaluation engine.</p>
+                <p>These values are passed to the transaction pipeline and can be combined with custom parameters.</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Amount threshold</label>
+                  <input
+                    type="number"
+                    value={String(formData.parameters.amountThreshold ?? '')}
+                    onChange={(e) => updateRuleParameter('amountThreshold', e.target.value)}
+                    className="w-full px-2 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="5000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Min amount</label>
+                  <input
+                    type="number"
+                    value={String(formData.parameters.minAmount ?? '')}
+                    onChange={(e) => updateRuleParameter('minAmount', e.target.value)}
+                    className="w-full px-2 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="1000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Max amount</label>
+                  <input
+                    type="number"
+                    value={String(formData.parameters.maxAmount ?? '')}
+                    onChange={(e) => updateRuleParameter('maxAmount', e.target.value)}
+                    className="w-full px-2 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="5000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Blocked countries</label>
+                  <input
+                    type="text"
+                    value={String(formData.parameters.blockedCountries ?? '')}
+                    onChange={(e) => updateRuleParameter('blockedCountries', e.target.value)}
+                    className="w-full px-2 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="IR, SY, KP"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Blocked transaction types</label>
+                  <input
+                    type="text"
+                    value={String(formData.parameters.blockedTransactionTypes ?? '')}
+                    onChange={(e) => updateRuleParameter('blockedTransactionTypes', e.target.value)}
+                    className="w-full px-2 py-2 border border-slate-300 rounded text-sm"
+                    placeholder="wire, crypto_transfer"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Parameters */}

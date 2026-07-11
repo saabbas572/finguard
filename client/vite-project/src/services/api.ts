@@ -4,7 +4,7 @@
  * This is the HTTP client for all backend communication.
  * 
  * Communication Flow:
- * React Components → Redux (authSlice) → authService.ts → api.ts (THIS FILE) → Backend Server
+ * React components/context → authService.ts → api.ts (THIS FILE) → Backend Server
  * 
  * Responsibilities:
  * 1. Creates an Axios instance with the backend URL

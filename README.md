@@ -4,7 +4,7 @@ A full-stack monorepo application for defining custom alert scenarios,
 processing transactions through a rule-based pipeline, and investigating 
 flagged activity in real time.
 
-> Currently in development — Day 1 of build log below.
+> Currently in development — Day 8 of build log below.
 
 ---
 
@@ -25,9 +25,36 @@ MongoDB · Python · FastAPI · Docker · Sentry · AWS · GitHub Actions
 
 ---
 
+## API Documentation
+
+Complete API documentation is available for all endpoints:
+
+- **[OpenAPI/Swagger Spec](docs/SWAGGER_DOCS.yaml)** — Interactive API documentation
+  - View at [Swagger Editor](https://editor.swagger.io/)
+  - Copy-paste the YAML content to explore endpoints interactively
+  
+- **[Comprehensive API Guide](docs/API_DOCS.md)** — How-to guide with examples
+  - Authentication flows
+  - Common workflows
+  - Error handling
+  - Testing checklist
+  
+- **[Postman Collection](docs/POSTMAN_COLLECTION.json)** — Pre-configured API requests
+  - Import into Postman for automated testing
+  - Auto-capture tokens and IDs from responses
+  - Test all endpoints with example payloads
+
+**Quick links to API endpoints:**
+- Authentication: `POST /auth/register`, `POST /auth/login`
+- Scenarios (Rules): `POST/GET/PUT/DELETE /scenarios`
+- Pipeline: `POST /pipeline/evaluate`
+- Alerts: `GET/PATCH/DELETE /alerts`, `GET /alerts/stats`
+
+---
+
 ## Architecture Diagram
 
-![FinGuard Architecture](docs/Architecture.png)
+![FinGuard Architecture](docs/architecture.svg)
 
 The diagram illustrates the FinGuard monorepo architecture. The React frontend in `client/vite-project` communicates with the Express backend under `server`, while the `pipeline` directory is reserved for the future Python transaction-processing service. MongoDB stores user and alert data, and Docker is used to compose the frontend, backend, and database services. The diagram also highlights external integrations for monitoring, auth, and data pipelines at a high level.
 
@@ -162,13 +189,33 @@ Built the core transaction evaluation pipeline and alert storage system. Added a
 
 **Tested:** End-to-end alert flow (create scenario → evaluate transaction → alert stored → dashboard updated), server tests passing, frontend build successful.
 
-**Next:** Build a dedicated Alerts management page, expand rule logic beyond amount thresholds, add real transaction data ingestion from payment APIs.
+**Today’s steps:** Build a dedicated Alerts management page, expand rule logic beyond amount thresholds, add real transaction data ingestion from payment APIs.
 
 **What I learned:**
 - How to build a rule evaluation engine with flexible parameter checking.
 - How to wire automatic alert persistence when rules trigger.
 - How to keep dashboard data real-time instead of using mocked data.
 - Importance of proper React key management to prevent input focus loss.
+
+---
+
+### Day 8 — Alerts UI, Expanded Rule Logic, and Sample Ingestion
+**Date:** July 11, 2026
+
+Built a dedicated Alerts management experience for reviewing, filtering, resolving, and deleting alerts. Added a sample-transaction evaluation card to the Alerts page so users can submit amount, type, country, and merchant values and immediately run the current rule engine against them.
+
+Expanded the backend pipeline beyond simple amount-threshold checks to support amount-range logic (min/max), blocked-country checks, blocked-transaction-type checks, and multi-condition evaluation. Added a lightweight local ingestion helper that feeds sample transactions into the pipeline so the app can demonstrate end-to-end alert evaluation without depending on a live payment API connection.
+
+Updated the frontend summary output to show the names of all triggered scenarios after evaluation and surfaced the rule configuration inputs in the scenario form for amount ranges and blocked values.
+
+**Completed today:** Dedicated alerts page, sample transaction evaluation flow, expanded rule engine configuration, triggered-scenario names in evaluation summary, local sample-ingestion helper, and updated frontend/backend validation.
+
+**Next:** Add richer mock transaction history, support velocity and pattern-based rules, and optionally wire a real provider integration later.
+
+**What I learned:**
+- How to expose evaluation results in the UI without losing the alert-management workflow.
+- How to structure rule parameters so multiple condition types can be evaluated consistently.
+- How to keep the product demo-ready even when live ingestion is unavailable by using a local sample-ingestion path.
 
 ---
 
@@ -183,4 +230,5 @@ Built the core transaction evaluation pipeline and alert storage system. Added a
 | Day 5 | Add scenario builder UI and local template persistence | Added `ScenarioBuilder` page, protected `/builder` route, dashboard link, and localStorage-backed scenario templates. | Backend persistence and pipeline integration remaining. |
 | Day 6 | Add backend scenario storage, connect frontend scenario CRUD, and document the feature end-to-end. | Added `Scenario` model, RESTful scenario CRUD API, frontend `scenarioService`, Redux `scenarioSlice`, list and form UI, parameter editing, and API docs. | Keeping the backend, frontend, and auth flow synchronized while expanding the feature set. |
 | Day 7 | Build rule engine, alert storage, and dashboard alert integration. | Added `/api/pipeline/evaluate` endpoint, Alert model and API, real-time dashboard metrics, threshold-based rule evaluation, and end-to-end alert flow. | Managing transaction evaluation state, ensuring alerts persist correctly, and maintaining React component performance. |
+| Day 8 | Build dedicated alerts management UX and expand rule logic beyond thresholds. | Added Alerts page, sample transaction evaluation, min/max + blocked-country/type rule support, local sample-ingestion helper, and triggered-scenario summary output. | Keeping the experience useful without live payment-provider integration while still demonstrating alert creation end to end. |
 

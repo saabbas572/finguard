@@ -4,29 +4,41 @@
  * Main page for managing financial scenarios
  * 
  * Shows list of scenarios and allows create/edit/delete
- * Uses Redux for state management and communicates with backend API
+ * Uses local page state and communicates with backend API
  */
 
 import { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import type { RootState, AppDispatch } from '../store';
 import type { Scenario } from '../services/scenarioService';
-import { fetchScenarios } from '../store/scenarioSlice';
+import { getScenariosAPI } from '../services/scenarioService';
 import ScenarioList from '../components/scenarios/ScenarioList';
 import ScenarioForm from '../components/scenarios/ScenarioForm';
 
 const ScenarioBuilder = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { scenarios } = useSelector((state: RootState) => state.scenarios);
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
 
+  const loadScenarios = async () => {
+    try {
+      setLoading(true);
+      const data = await getScenariosAPI({ sort: 'newest' });
+      setScenarios(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load scenarios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load scenarios on mount
   useEffect(() => {
-    dispatch(fetchScenarios());
-  }, [dispatch]);
+    void loadScenarios();
+  }, []);
 
   const activeCount = scenarios.filter((s) => s.isActive).length;
 
@@ -117,7 +129,14 @@ const ScenarioBuilder = () => {
         )}
 
         {/* Main Content - Scenario List */}
-        <ScenarioList onSelectScenario={handleSelectScenario} onCreateNew={handleCreateNew} />
+        <ScenarioList
+          scenarios={scenarios}
+          loading={loading}
+          error={error}
+          onRefresh={loadScenarios}
+          onSelectScenario={handleSelectScenario}
+          onCreateNew={handleCreateNew}
+        />
 
         {/* Scenario Form Modal */}
         {showForm && (
@@ -125,6 +144,7 @@ const ScenarioBuilder = () => {
             scenario={selectedScenario}
             onClose={handleCloseForm}
             onSuccess={() => {
+              void loadScenarios();
               setShowForm(false);
               setSelectedScenario(null);
             }}

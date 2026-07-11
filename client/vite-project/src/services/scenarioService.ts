@@ -4,7 +4,7 @@
  * Contains all API calls related to scenarios
  * 
  * Communication Flow:
- * React Component → Redux (scenarioSlice) → THIS FILE (scenarioService) → api.ts → Backend
+ * React components/pages → THIS FILE (scenarioService) → api.ts → Backend
  */
 
 import api from './api';

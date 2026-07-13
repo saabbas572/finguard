@@ -2,12 +2,14 @@ import { Navigate } from 'react-router-dom';
 import type { JSX } from 'react/jsx-runtime';
 import { useAuth } from '../../context/AuthContext';
 
-const devBypassEnabled = import.meta.env.DEV && localStorage.getItem('dev_auth_bypass') === 'true';
-
+// Dev bypass is DISABLED - always enforce authentication
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { user } = useAuth();
+
+  // User is logged in - show page
   if (user) return children;
-  if (devBypassEnabled) return children;
+  
+  // User is not logged in - redirect to login
   return <Navigate to="/login" replace />;
 };
 

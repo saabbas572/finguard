@@ -21,6 +21,7 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
     title: scenario?.title || '',
     description: scenario?.description || '',
     type: scenario?.type || 'custom',
+    severity: (scenario?.severity as 'low' | 'medium' | 'high') || 'medium',
     parameters: scenario?.parameters || {},
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,6 +33,7 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
         title: scenario.title,
         description: scenario.description || '',
         type: scenario.type,
+        severity: (scenario.severity as 'low' | 'medium' | 'high') || 'medium',
         parameters: scenario.parameters,
       });
     }
@@ -101,6 +103,7 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
           title: formData.title,
           description: formData.description,
           type: formData.type,
+          severity: formData.severity,
           parameters: formData.parameters,
         });
       } else {
@@ -109,6 +112,7 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
           title: formData.title,
           description: formData.description,
           type: formData.type,
+          severity: formData.severity,
           parameters: formData.parameters,
         });
       }
@@ -214,6 +218,36 @@ const ScenarioForm = ({ scenario, onClose, onSuccess }: ScenarioFormProps) => {
               <option value="debt-payoff">Debt Payoff</option>
               <option value="savings">Savings Goal</option>
             </select>
+          </div>
+
+          {/* Severity Level */}
+          <div>
+            <label className="block text-sm font-medium text-slate-900 mb-2">
+              Alert Severity Level *
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {(['low', 'medium', 'high'] as const).map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, severity: level })}
+                  className={`px-4 py-2 rounded-lg font-medium transition ${
+                    formData.severity === level
+                      ? level === 'low'
+                        ? 'bg-green-500 text-white'
+                        : level === 'medium'
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-red-500 text-white'
+                      : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                  }`}
+                >
+                  {level.charAt(0).toUpperCase() + level.slice(1)}
+                </button>
+              ))}
+            </div>
+            <p className="text-slate-500 text-xs mt-2">
+              Choose the severity level for alerts triggered by this scenario.
+            </p>
           </div>
 
           {/* Rule Configuration */}

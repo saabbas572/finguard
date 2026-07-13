@@ -19,6 +19,7 @@ export interface Scenario {
   title: string;
   description?: string;
   type: 'retirement' | 'investment' | 'debt-payoff' | 'savings' | 'custom';
+  severity: 'low' | 'medium' | 'high';
   parameters: Record<string, any>;
   isActive: boolean;
   createdAt: string;
@@ -36,6 +37,7 @@ export const createScenarioAPI = async (scenarioData: {
   title: string;
   description?: string;
   type: string;
+  severity: 'low' | 'medium' | 'high';
   parameters?: Record<string, any>;
 }): Promise<Scenario> => {
   const { data } = await api.post('/scenarios', scenarioData);
@@ -99,6 +101,7 @@ export const updateScenarioAPI = async (
     title?: string;
     description?: string;
     type?: string;
+    severity?: 'low' | 'medium' | 'high';
     parameters?: Record<string, any>;
   }
 ): Promise<Scenario> => {

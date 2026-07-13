@@ -113,3 +113,44 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+/**
+ * Verify Token Controller
+ * ----------------------
+ * Handles GET /api/auth/verify
+ * 
+ * Flow:
+ * 1. Frontend sends request with JWT token in Authorization header
+ * 2. protect middleware validates the token (checks signature, expiration)
+ * 3. If valid: middleware extracts user ID and sets it on req.user
+ * 4. Controller fetches fresh user data from database
+ * 5. Sends back user data (no new token needed - same token is still valid)
+ * 6. Used on app initialization to restore user session on page refresh
+ */
+export const verify = async (req: any, res: Response): Promise<void> => {
+  try {
+    const userId = req.user;
+    if (!userId) {
+      res.status(401).json({ message: 'No user ID found' });
+      return;
+    }
+
+    // Fetch fresh user data from database
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(401).json({ message: 'User not found' });
+      return;
+    }
+
+    // Send back user data (reuse existing token)
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: req.headers.authorization?.split(' ')[1] || '',
+    });
+  } catch (error) {
+    res.status(401).json({ message: 'Token verification failed', error });
+  }
+};

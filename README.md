@@ -4,7 +4,7 @@ A full-stack monorepo application for defining custom alert scenarios,
 processing transactions through a rule-based pipeline, and investigating 
 flagged activity in real time.
 
-> Currently in development — Day 8 of build log below.
+> Currently in development — Day 9 of build log below.
 
 ---
 
@@ -219,6 +219,74 @@ Updated the frontend summary output to show the names of all triggered scenarios
 
 ---
 
+### Day 9 — Real Payment Provider Integration & Dynamic Severity Levels
+**Date:** July 13, 2026
+
+**Part 1: Payment Provider Integration**
+
+Built a complete payment provider integration system supporting Stripe, PayPal, Square, and custom APIs. Created a provider adapter architecture with a factory pattern to instantiate the correct provider based on configuration. Each adapter normalizes provider responses into a standardized transaction format.
+
+Added a backend `Integration` model to persist provider credentials (encrypted at rest), along with a full CRUD API (`GET`, `POST`, `DELETE`, `/test`) for managing integrations. Implemented connection testing for each provider to validate credentials before saving.
+
+Built a comprehensive **Integration Settings page** in React where users can:
+- Select a payment provider (Stripe, PayPal, Square, or custom)
+- Enter provider-specific credentials (API keys, access tokens, etc.)
+- Test the connection before saving
+- Manage multiple integrations and activate/deactivate them
+- View helpful links to get provider credentials
+
+Wired the integration system to the pipeline by adding a `/api/pipeline/evaluate-integration` endpoint that:
+- Fetches the active integration for the user
+- Uses the provider adapter to retrieve real transactions
+- Evaluates all transactions against active scenarios
+- Creates alerts for matched transactions
+- Returns a summary of evaluations and alerts created
+
+**Part 2: Stripe Customer Data & Dynamic Severity**
+
+Fixed Stripe API integration to properly fetch customer data using correct expand syntax:
+- Single charge endpoint: `GET /v1/charges/:id?expand[]=customer`
+- List charges endpoint: `GET /v1/charges?expand[]=data.customer`
+
+Implemented dynamic severity levels (low, medium, high) throughout the system:
+- Added `severity` field to `Scenario` model (MongoDB)
+- Updated scenario creation form to allow users to select severity level
+- Modified pipeline evaluation to use user-defined severity instead of hardcoded 'high'
+- Auto-polls every 10 seconds with no manual clicks required
+- Customer names and emails now properly populate in alerts from Stripe
+
+**Completed today:** 
+- Integration model and CRUD API, provider adapter system (Stripe, PayPal, Square, Custom)
+- Connection testing for each provider, Integration Settings UI page
+- Fixed Stripe API expand parameter syntax for customer data retrieval
+- Dynamic severity levels in scenarios with user-configurable UI
+- Auto-evaluation every 10 seconds with real transaction data
+- Transaction details page showing complete customer and transaction information
+- Duplicate alert prevention from repeated evaluations
+- End-to-end testing with real Stripe test transactions ($150, $9000+ CAD)
+
+**Tested:** 
+- Provider connection tests for each type, integration CRUD operations
+- Real Stripe transaction detection and alert creation
+- Auto-polling detects new transactions within 10 seconds
+- Severity levels correctly applied based on user scenario configuration
+
+**Next:** 
+- Webhook handling for real-time transaction ingestion
+- Scheduled jobs for periodic transaction fetching
+- Advanced fraud detection (velocity, email domain risk, IP geolocation)
+- Machine learning anomaly detection for fraud scoring
+
+**What I learned:**
+- How to design a provider adapter pattern for extensible payment integrations
+- How to build a credential management system with security considerations
+- The difference between Stripe list endpoint expand syntax (`expand[]=data.customer`) vs single resource (`expand[]=customer`)
+- How to abstract provider-specific logic so the rest of the app works with standardized data
+- The importance of connection testing to validate credentials early
+- How to implement user-configurable alert severity throughout the pipeline
+
+---
+
 ## Development Summary
 
 | Day | Expected | Done | Challenges |
@@ -231,4 +299,5 @@ Updated the frontend summary output to show the names of all triggered scenarios
 | Day 6 | Add backend scenario storage, connect frontend scenario CRUD, and document the feature end-to-end. | Added `Scenario` model, RESTful scenario CRUD API, frontend `scenarioService`, Redux `scenarioSlice`, list and form UI, parameter editing, and API docs. | Keeping the backend, frontend, and auth flow synchronized while expanding the feature set. |
 | Day 7 | Build rule engine, alert storage, and dashboard alert integration. | Added `/api/pipeline/evaluate` endpoint, Alert model and API, real-time dashboard metrics, threshold-based rule evaluation, and end-to-end alert flow. | Managing transaction evaluation state, ensuring alerts persist correctly, and maintaining React component performance. |
 | Day 8 | Build dedicated alerts management UX and expand rule logic beyond thresholds. | Added Alerts page, sample transaction evaluation, min/max + blocked-country/type rule support, local sample-ingestion helper, and triggered-scenario summary output. | Keeping the experience useful without live payment-provider integration while still demonstrating alert creation end to end. |
+| Day 9 | Build real payment provider integration and wire to pipeline. | Added provider adapters (Stripe, PayPal, Square, Custom), Integration model and CRUD API, connection testing, Integration Settings page, and `/api/pipeline/evaluate-integration` endpoint. | Managing credentials securely, abstracting provider-specific logic, and ensuring extensibility for future providers. |
 

@@ -4,6 +4,7 @@ import { getAlertStatsAPI, getAlertsAPI } from '../services/alertService';
 import type { AlertStats, Alert } from '../services/alertService';
 import { getScenariosAPI } from '../services/scenarioService';
 import type { Scenario } from '../services/scenarioService';
+import { evaluateIntegrationTransactionsAPI } from '../services/pipelineService';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
@@ -14,6 +15,8 @@ const Dashboard = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [autoPollingEnabled, setAutoPollingEnabled] = useState(true);
+  const [lastTransactionCount, setLastTransactionCount] = useState(0);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -52,6 +55,36 @@ const Dashboard = () => {
     fetchAlerts();
   }, []);
 
+  // Auto-poll for new transactions every 10 seconds and auto-evaluate when found
+  useEffect(() => {
+    if (!autoPollingEnabled) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await evaluateIntegrationTransactionsAPI(10);
+        const newTransactionCount = response.transactionCount || 0;
+
+        // If new transactions were found, refresh alerts
+        if (newTransactionCount > lastTransactionCount) {
+          console.log(`Dashboard: New transaction detected! Previous: ${lastTransactionCount}, Current: ${newTransactionCount}`);
+          setLastTransactionCount(newTransactionCount);
+          
+          // Refresh alerts and stats
+          const [stats, alertsData] = await Promise.all([
+            getAlertStatsAPI(),
+            getAlertsAPI({ sort: 'newest' }),
+          ]);
+          setAlertStats(stats);
+          setAlerts(alertsData);
+        }
+      } catch (err: any) {
+        console.error('Dashboard auto-polling error:', err);
+      }
+    }, 10000); // Poll every 10 seconds for new transactions
+
+    return () => clearInterval(pollInterval);
+  }, [autoPollingEnabled, lastTransactionCount]);
+
   const filteredItems = useMemo(() => {
     if (selectedFilter === 'all') return alerts;
     if (selectedFilter === 'alerts') return alerts.filter((a) => !a.isResolved);
@@ -84,6 +117,12 @@ const Dashboard = () => {
               className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               View alerts
+            </a>
+            <a
+              href="/integrations"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Integration settings
             </a>
             <button
               type="button"
@@ -151,13 +190,24 @@ const Dashboard = () => {
           </div>
 
           <div className="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-6">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <h2 className="text-xl font-semibold text-slate-900">Recent alerts</h2>
-              <p className="text-sm text-slate-600">
-                {selectedFilter === 'all'
-                  ? `Showing all ${alerts.length} alerts`
-                  : `Showing ${filteredItems.length} ${selectedFilter === 'high' ? 'high severity' : 'unresolved'} alerts`}
-              </p>
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Recent alerts</h2>
+                <p className="mt-1 text-sm text-slate-600">
+                  {selectedFilter === 'all'
+                    ? `Showing all ${alerts.length} alerts`
+                    : `Showing ${filteredItems.length} ${selectedFilter === 'high' ? 'high severity' : 'unresolved'} alerts`}
+                </p>
+              </div>
+              <label className="flex items-center gap-2 whitespace-nowrap">
+                <input
+                  type="checkbox"
+                  checked={autoPollingEnabled}
+                  onChange={(e) => setAutoPollingEnabled(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                <span className="text-sm font-medium text-slate-700">Auto-Evaluate</span>
+              </label>
             </div>
 
             <div className="mt-6 space-y-4">

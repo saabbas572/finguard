@@ -57,3 +57,29 @@ export const registerUser = async (credentials: RegisterCredentials): Promise<Us
 export const logoutUser = () => {
   localStorage.removeItem('user');
 };
+
+/**
+ * Verify Token
+ * -----------
+ * 1. Called on app initialization to verify stored token is still valid
+ * 2. Sends GET request to backend with stored JWT token in Authorization header
+ * 3. Backend validates token signature and expiration via protect middleware
+ * 4. If valid: returns fresh user data
+ * 5. If invalid/expired: returns 401 error
+ * 6. Used to restore user session after page refresh
+ */
+export const verifyToken = async (): Promise<User | null> => {
+  try {
+    const stored = localStorage.getItem('user');
+    if (!stored) return null;
+
+    const { data } = await api.get('/auth/verify');
+    // Update localStorage with fresh data
+    localStorage.setItem('user', JSON.stringify(data));
+    return data;
+  } catch (error) {
+    // Token is invalid/expired - clear localStorage
+    localStorage.removeItem('user');
+    return null;
+  }
+};

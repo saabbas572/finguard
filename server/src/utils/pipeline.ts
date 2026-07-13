@@ -1,12 +1,14 @@
 export interface ScenarioRuleLike {
   title: string;
   parameters?: Record<string, any>;
+  severity?: 'low' | 'medium' | 'high'; // User-defined severity level
   isActive?: boolean;
 }
 
 export interface PipelineMatch {
   title: string;
   reason: string;
+  severity: 'low' | 'medium' | 'high';
 }
 
 export interface PipelineEvaluationResult {
@@ -25,6 +27,7 @@ export interface PipelineEvaluationResult {
 const evaluateRule = (scenario: ScenarioRuleLike, transaction: Record<string, any>): PipelineMatch | null => {
   const params = scenario.parameters || {};
   const reasons: string[] = [];
+  let isMatch = false;
 
   // Check amount threshold
   if (params.amountThreshold) {
@@ -32,19 +35,23 @@ const evaluateRule = (scenario: ScenarioRuleLike, transaction: Record<string, an
     const amount = Number(transaction.amount ?? 0);
     if (threshold > 0 && amount >= threshold) {
       reasons.push('amount threshold exceeded');
+      isMatch = true;
     }
   }
 
-  // Check amount range (min/max)
+  // Check amount range (min/max) - MATCH if amount is INSIDE range
   if (params.minAmount != null || params.maxAmount != null) {
     const amount = Number(transaction.amount ?? 0);
     const minAmount = params.minAmount != null ? Number(params.minAmount) : -Infinity;
     const maxAmount = params.maxAmount != null ? Number(params.maxAmount) : Infinity;
-    if (Number.isFinite(minAmount) && amount < minAmount) {
-      reasons.push(`amount below minimum threshold: ${minAmount}`);
-    }
-    if (Number.isFinite(maxAmount) && amount > maxAmount) {
-      reasons.push(`amount above maximum threshold: ${maxAmount}`);
+    
+    // Amount is inside range if it's >= minAmount AND <= maxAmount
+    if (amount >= minAmount && amount <= maxAmount) {
+      reasons.push(`amount in range: $${minAmount} - $${maxAmount}`);
+      isMatch = true;
+    } else {
+      // Amount is outside range - not a match
+      return null;
     }
   }
 
@@ -57,6 +64,7 @@ const evaluateRule = (scenario: ScenarioRuleLike, transaction: Record<string, an
     const txCountry = transaction.country?.toUpperCase() || '';
     if (blockedCountries.some((c: string) => c.toUpperCase() === txCountry)) {
       reasons.push(`transaction from blocked country: ${txCountry}`);
+      isMatch = true;
     }
   }
 
@@ -69,21 +77,19 @@ const evaluateRule = (scenario: ScenarioRuleLike, transaction: Record<string, an
     const txType = transaction.type?.toLowerCase() || '';
     if (blockedTypes.some((t: string) => t.toLowerCase() === txType)) {
       reasons.push(`blocked transaction type: ${txType}`);
+      isMatch = true;
     }
   }
 
-  // Check velocity (number of transactions in short time)
-  // This is simplified - in production, you'd query transaction history
-  if (params.maxTransactionsPerHour) {
-    // For now, we'll skip this as it requires transaction history
-    // In future, query recent transactions for this user
-  }
-
   // If any condition triggered, return the match
-  if (reasons.length > 0) {
+  if (isMatch && reasons.length > 0) {
+    // Use severity level set by user when creating scenario, default to 'medium'
+    const severity = scenario.severity || 'medium';
+    
     return {
       title: scenario.title,
       reason: reasons.join(' | '),
+      severity,
     };
   }
 

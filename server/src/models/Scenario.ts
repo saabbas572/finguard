@@ -23,6 +23,7 @@ export interface IScenario extends Document {
   description?: string;
   type: string; // e.g., 'retirement', 'investment', 'debt-payoff'
   parameters: Record<string, any>; // Flexible JSON object for scenario data
+  severity: 'low' | 'medium' | 'high'; // Alert severity level when this scenario triggers
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -72,6 +73,14 @@ const ScenarioSchema = new Schema<IScenario>(
       type: Map,
       of: mongoose.Schema.Types.Mixed,
       default: {},
+    },
+    
+    // Alert severity level when scenario triggers
+    severity: {
+      type: String,
+      enum: ['low', 'medium', 'high'],
+      default: 'medium',
+      required: true,
     },
     
     // Whether scenario is active/inactive

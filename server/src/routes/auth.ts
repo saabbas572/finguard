@@ -11,7 +11,8 @@
  */
 
 import { Router } from 'express';
-import { register, login } from '../controllers/authController';
+import { register, login, verify } from '../controllers/authController';
+import { protect } from '../middleware/authMiddleware';
 
 const router = Router();
 
@@ -28,5 +29,13 @@ router.post('/register', register);
  * Controller returns: { _id, name, email, role, token }
  */
 router.post('/login', login);
+
+/**
+ * GET /api/auth/verify
+ * Frontend sends: Authorization header with JWT token
+ * Controller verifies token and returns fresh user data
+ * Used on app initialization to restore user session after page refresh
+ */
+router.get('/verify', protect, verify);
 
 export default router;

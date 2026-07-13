@@ -32,6 +32,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Trust the stored user from localStorage.
+   * No need to verify on every page load - the token will be validated
+   * when making actual API calls via the protect middleware.
+   * If token is expired, the API will return 401 and we handle it there.
+   */
+
   const login = async (credentials: LoginCredentials) => {
     setLoading(true);
     setError(null);

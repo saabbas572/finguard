@@ -6,15 +6,18 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getAlertsAPI, resolveAlertAPI, deleteAlertAPI } from '../services/alertService';
-import { evaluateTransactionAPI } from '../services/pipelineService';
+import { evaluateTransactionAPI, evaluateIntegrationTransactionsAPI } from '../services/pipelineService';
 import type { Alert } from '../services/alertService';
 
 const Alerts = () => {
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [evaluationState, setEvaluationState] = useState<{ loading: boolean; message: string | null; result: any | null }>({ loading: false, message: null, result: null });
+  const [integrationState, setIntegrationState] = useState<{ loading: boolean; message: string | null; result: any | null }>({ loading: false, message: null, result: null });
   const [sampleTransaction, setSampleTransaction] = useState({
     amount: '6500',
     type: 'wire',
@@ -26,6 +29,8 @@ const Alerts = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'unresolved' | 'resolved'>('all');
   const [severityFilter, setSeverityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
+  const [autoPollingEnabled, setAutoPollingEnabled] = useState(true);
+  const [lastTransactionCount, setLastTransactionCount] = useState(0);
 
   const fetchAlerts = async () => {
     try {
@@ -43,6 +48,35 @@ const Alerts = () => {
   useEffect(() => {
     void fetchAlerts();
   }, [sortBy]);
+
+  // Auto-poll for NEW transactions every 10 seconds and auto-evaluate when found
+  useEffect(() => {
+    if (!autoPollingEnabled) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await evaluateIntegrationTransactionsAPI(10);
+        const newTransactionCount = response.transactionCount || 0;
+
+        // If new transactions were found, auto-evaluate silently
+        if (newTransactionCount > lastTransactionCount) {
+          console.log(`New transaction detected! Previous: ${lastTransactionCount}, Current: ${newTransactionCount}`);
+          setLastTransactionCount(newTransactionCount);
+          setIntegrationState({
+            loading: false,
+            message: `Auto-detected new transaction(s)! ${response.alertsCreated} alert(s) created.`,
+            result: response,
+          });
+          // Refresh alerts list
+          await fetchAlerts();
+        }
+      } catch (err: any) {
+        console.error('Auto-polling error:', err);
+      }
+    }, 10000); // Poll every 10 seconds for new transactions
+
+    return () => clearInterval(pollInterval);
+  }, [autoPollingEnabled, lastTransactionCount]);
 
   // Apply client-side filters
   const filteredAlerts = useMemo(() => {
@@ -94,6 +128,22 @@ const Alerts = () => {
     }
   };
 
+  const handleEvaluateIntegration = async () => {
+    try {
+      setIntegrationState({ loading: true, message: null, result: null });
+      const response = await evaluateIntegrationTransactionsAPI(10);
+      setIntegrationState({
+        loading: false,
+        message: `Fetched ${response.transactionCount} transactions. Created ${response.alertsCreated} alert(s).`,
+        result: response,
+      });
+      // Refresh alerts list
+      await fetchAlerts();
+    } catch (err: any) {
+      setIntegrationState({ loading: false, message: err.message || 'Failed to evaluate integration transactions', result: null });
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'high':
@@ -125,7 +175,47 @@ const Alerts = () => {
         </div>
 
         <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
+          {/* Real Integration Section */}
+          <div className="mb-6 rounded-lg border border-green-100 bg-green-50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Check Real Transactions</h2>
+                <p className="mt-1 text-sm text-slate-600">Auto-checks every 10 seconds for new transactions and evaluates them automatically.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={autoPollingEnabled}
+                    onChange={(e) => setAutoPollingEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Auto-Evaluate</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleEvaluateIntegration}
+                  disabled={integrationState.loading}
+                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
+                >
+                  {integrationState.loading ? 'Checking...' : 'Manual Check'}
+                </button>
+              </div>
+            </div>
+            {integrationState.message && (
+              <p className="mt-3 text-sm text-slate-700">{integrationState.message}</p>
+            )}
+            {integrationState.result && (
+              <div className="mt-3 rounded border border-green-200 bg-white p-3 text-sm text-slate-700">
+                <p className="font-medium">Integration Summary</p>
+                <p>Provider: {integrationState.result.provider}</p>
+                <p>Transactions fetched: {integrationState.result.transactionCount}</p>
+                <p>Alerts created: {integrationState.result.alertsCreated}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Try a sample transaction</h2>
@@ -315,7 +405,14 @@ const Alerts = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="ml-4 flex gap-2">
+                  <div className="ml-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => alert.transactionData?.id && navigate(`/transaction/${alert.transactionData.id}`)}
+                      disabled={!alert.transactionData?.id}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      View Details
+                    </button>
                     {!alert.isResolved && (
                       <button
                         onClick={() => handleResolve(alert._id)}

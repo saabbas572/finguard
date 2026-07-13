@@ -21,3 +21,8 @@ export const evaluateTransactionAPI = async (transaction: Record<string, any>): 
   const { data } = await api.post('/pipeline/evaluate', { transaction });
   return data;
 };
+
+export const evaluateIntegrationTransactionsAPI = async (limit: number = 10) => {
+  const { data } = await api.post('/pipeline/evaluate-integration', { limit });
+  return data;
+};

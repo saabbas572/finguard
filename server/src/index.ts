@@ -18,6 +18,7 @@ import protectedRoutes from './routes/protected';
 import scenarioRoutes from './routes/scenarios';
 import pipelineRoutes from './routes/pipeline';
 import alertRoutes from './routes/alerts';
+import integrationRoutes from './routes/integrations';
 
 // Connect to MongoDB database
 connectDB();
@@ -44,6 +45,7 @@ app.use('/api/user', protectedRoutes);
 app.use('/api/scenarios', scenarioRoutes);
 app.use('/api/pipeline', pipelineRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/integrations', integrationRoutes);
 
 // Health check endpoint
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

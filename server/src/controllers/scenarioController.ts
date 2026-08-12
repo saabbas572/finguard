@@ -39,7 +39,7 @@ export const createScenario = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { title, description, type, parameters } = req.body;
+    const { title, description, type, parameters, severity } = req.body;
     const userId = req.user;
 
     // Validation
@@ -54,6 +54,7 @@ export const createScenario = async (
       title,
       description,
       type,
+      severity: severity || 'medium',
       parameters: parameters || {},
       isActive: true,
     });
@@ -184,7 +185,7 @@ export const updateScenario = async (
   try {
     const { id } = req.params;
     const userId = req.user;
-    const { title, description, type, parameters } = req.body;
+    const { title, description, type, severity, parameters } = req.body;
 
     // Find scenario
     const scenario = await Scenario.findById(id);
@@ -204,6 +205,7 @@ export const updateScenario = async (
     if (title !== undefined) scenario.title = title;
     if (description !== undefined) scenario.description = description;
     if (type !== undefined) scenario.type = type;
+    if (severity !== undefined) scenario.severity = severity;
     if (parameters !== undefined) scenario.parameters = parameters;
 
     // Save and return

@@ -31,6 +31,8 @@ export const getAlertsAPI = async (filters?: {
   isResolved?: boolean;
   severity?: string;
   sort?: 'newest' | 'oldest';
+  from?: string;
+  to?: string;
 }): Promise<Alert[]> => {
   const params = new URLSearchParams();
 
@@ -41,7 +43,13 @@ export const getAlertsAPI = async (filters?: {
     params.append('severity', filters.severity);
   }
   if (filters?.sort) {
-    params.append('sort', filters.sort);
+    params.append('sort', filters.sort === 'oldest' ? 'oldest' : 'newest');
+  }
+  if (filters?.from) {
+    params.append('from', filters.from);
+  }
+  if (filters?.to) {
+    params.append('to', filters.to);
   }
 
   const queryString = params.toString();

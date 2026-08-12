@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { evaluateTransactionAgainstScenarios } from './pipeline.ts';
+import { evaluateTransactionAgainstScenarios } from '../src/utils/pipeline.ts';
 
 test('flags high-volume transfers above threshold', () => {
   const result = evaluateTransactionAgainstScenarios(
@@ -49,7 +49,7 @@ test('flags transactions outside configured amount range', () => {
   );
 
   assert.equal(result.triggeredScenarios.length, 1);
-  assert.match(result.triggeredScenarios[0].reason, /amount above maximum threshold/);
+  assert.match(result.triggeredScenarios[0].reason, /outside configured range/);
 });
 
 test('flags blocked transaction types', () => {

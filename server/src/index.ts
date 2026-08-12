@@ -20,10 +20,11 @@ import pipelineRoutes from './routes/pipeline';
 import alertRoutes from './routes/alerts';
 import integrationRoutes from './routes/integrations';
 
-// Connect to MongoDB database
-connectDB();
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
-const app = express();
+export const app = express();
 
 // Enable CORS (allows frontend at different origin to make requests)
 app.use(cors());
@@ -51,4 +52,9 @@ app.use('/api/integrations', integrationRoutes);
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+export default app;

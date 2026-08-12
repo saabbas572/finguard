@@ -18,7 +18,7 @@ export const getAlerts = async (
 ): Promise<void> => {
   try {
     const userId = req.user;
-    const { isResolved, severity, sort } = req.query;
+    const { isResolved, severity, sort, from, to } = req.query;
 
     const filter: any = { userId };
 
@@ -27,6 +27,20 @@ export const getAlerts = async (
     }
     if (severity) {
       filter.severity = severity;
+    }
+
+    if (from || to) {
+      filter.createdAt = {};
+
+      if (from) {
+        filter.createdAt.$gte = new Date(from as string);
+      }
+
+      if (to) {
+        const endDate = new Date(to as string);
+        endDate.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = endDate;
+      }
     }
 
     let sortOption: any = { createdAt: -1 }; // Default: newest first

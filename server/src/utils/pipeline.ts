@@ -39,19 +39,15 @@ const evaluateRule = (scenario: ScenarioRuleLike, transaction: Record<string, an
     }
   }
 
-  // Check amount range (min/max) - MATCH if amount is INSIDE range
+  // Check amount range (min/max) - trigger when amount is outside the allowed range
   if (params.minAmount != null || params.maxAmount != null) {
     const amount = Number(transaction.amount ?? 0);
     const minAmount = params.minAmount != null ? Number(params.minAmount) : -Infinity;
     const maxAmount = params.maxAmount != null ? Number(params.maxAmount) : Infinity;
-    
-    // Amount is inside range if it's >= minAmount AND <= maxAmount
-    if (amount >= minAmount && amount <= maxAmount) {
-      reasons.push(`amount in range: $${minAmount} - $${maxAmount}`);
+
+    if (amount < minAmount || amount > maxAmount) {
+      reasons.push(`amount outside configured range: $${minAmount} - $${maxAmount}`);
       isMatch = true;
-    } else {
-      // Amount is outside range - not a match
-      return null;
     }
   }
 

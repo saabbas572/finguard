@@ -8,7 +8,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAlertsAPI, resolveAlertAPI, deleteAlertAPI } from '../services/alertService';
-import { evaluateTransactionAPI, evaluateIntegrationTransactionsAPI } from '../services/pipelineService';
 import type { Alert } from '../services/alertService';
 
 const Alerts = () => {
@@ -16,26 +15,23 @@ const Alerts = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [evaluationState, setEvaluationState] = useState<{ loading: boolean; message: string | null; result: any | null }>({ loading: false, message: null, result: null });
-  const [integrationState, setIntegrationState] = useState<{ loading: boolean; message: string | null; result: any | null }>({ loading: false, message: null, result: null });
-  const [sampleTransaction, setSampleTransaction] = useState({
-    amount: '6500',
-    type: 'wire',
-    country: 'IR',
-    merchant: 'Skyline Capital',
-  });
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<'all' | 'unresolved' | 'resolved'>('all');
   const [severityFilter, setSeverityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
-  const [autoPollingEnabled, setAutoPollingEnabled] = useState(true);
-  const [lastTransactionCount, setLastTransactionCount] = useState(0);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const fetchAlerts = async () => {
     try {
       setLoading(true);
-      const data = await getAlertsAPI({ sort: sortBy });
+      const data = await getAlertsAPI({
+        sort: sortBy,
+        severity: severityFilter === 'all' ? undefined : severityFilter,
+        from: fromDate || undefined,
+        to: toDate || undefined,
+      });
       setAlerts(data);
       setError(null);
     } catch (err: any) {
@@ -47,36 +43,7 @@ const Alerts = () => {
 
   useEffect(() => {
     void fetchAlerts();
-  }, [sortBy]);
-
-  // Auto-poll for NEW transactions every 10 seconds and auto-evaluate when found
-  useEffect(() => {
-    if (!autoPollingEnabled) return;
-
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await evaluateIntegrationTransactionsAPI(10);
-        const newTransactionCount = response.transactionCount || 0;
-
-        // If new transactions were found, auto-evaluate silently
-        if (newTransactionCount > lastTransactionCount) {
-          console.log(`New transaction detected! Previous: ${lastTransactionCount}, Current: ${newTransactionCount}`);
-          setLastTransactionCount(newTransactionCount);
-          setIntegrationState({
-            loading: false,
-            message: `Auto-detected new transaction(s)! ${response.alertsCreated} alert(s) created.`,
-            result: response,
-          });
-          // Refresh alerts list
-          await fetchAlerts();
-        }
-      } catch (err: any) {
-        console.error('Auto-polling error:', err);
-      }
-    }, 10000); // Poll every 10 seconds for new transactions
-
-    return () => clearInterval(pollInterval);
-  }, [autoPollingEnabled, lastTransactionCount]);
+  }, [sortBy, severityFilter, fromDate, toDate]);
 
   // Apply client-side filters
   const filteredAlerts = useMemo(() => {
@@ -105,42 +72,6 @@ const Alerts = () => {
       setAlerts(alerts.filter((a) => a._id !== id));
     } catch (err: any) {
       setError(err.message || 'Failed to delete alert');
-    }
-  };
-
-  const handleEvaluate = async () => {
-    try {
-      setEvaluationState({ loading: true, message: null, result: null });
-      const response = await evaluateTransactionAPI({
-        amount: Number(sampleTransaction.amount),
-        type: sampleTransaction.type,
-        country: sampleTransaction.country,
-        merchant: sampleTransaction.merchant,
-      });
-      setEvaluationState({
-        loading: false,
-        message: response.result.triggeredScenarios.length > 0 ? 'Evaluation completed and alerts were generated.' : 'Evaluation completed with no alerts triggered.',
-        result: response,
-      });
-      await fetchAlerts();
-    } catch (err: any) {
-      setEvaluationState({ loading: false, message: err.message || 'Failed to evaluate transaction', result: null });
-    }
-  };
-
-  const handleEvaluateIntegration = async () => {
-    try {
-      setIntegrationState({ loading: true, message: null, result: null });
-      const response = await evaluateIntegrationTransactionsAPI(10);
-      setIntegrationState({
-        loading: false,
-        message: `Fetched ${response.transactionCount} transactions. Created ${response.alertsCreated} alert(s).`,
-        result: response,
-      });
-      // Refresh alerts list
-      await fetchAlerts();
-    } catch (err: any) {
-      setIntegrationState({ loading: false, message: err.message || 'Failed to evaluate integration transactions', result: null });
     }
   };
 
@@ -175,116 +106,8 @@ const Alerts = () => {
         </div>
 
         <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          {/* Real Integration Section */}
-          <div className="mb-6 rounded-lg border border-green-100 bg-green-50 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Check Real Transactions</h2>
-                <p className="mt-1 text-sm text-slate-600">Auto-checks every 10 seconds for new transactions and evaluates them automatically.</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={autoPollingEnabled}
-                    onChange={(e) => setAutoPollingEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300"
-                  />
-                  <span className="text-sm font-medium text-slate-700">Auto-Evaluate</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleEvaluateIntegration}
-                  disabled={integrationState.loading}
-                  className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap"
-                >
-                  {integrationState.loading ? 'Checking...' : 'Manual Check'}
-                </button>
-              </div>
-            </div>
-            {integrationState.message && (
-              <p className="mt-3 text-sm text-slate-700">{integrationState.message}</p>
-            )}
-            {integrationState.result && (
-              <div className="mt-3 rounded border border-green-200 bg-white p-3 text-sm text-slate-700">
-                <p className="font-medium">Integration Summary</p>
-                <p>Provider: {integrationState.result.provider}</p>
-                <p>Transactions fetched: {integrationState.result.transactionCount}</p>
-                <p>Alerts created: {integrationState.result.alertsCreated}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-6 rounded-lg border border-blue-100 bg-blue-50 p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">Try a sample transaction</h2>
-                <p className="mt-1 text-sm text-slate-600">Submit a transaction to apply the current rule logic and create alerts.</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <input
-                  type="number"
-                  value={sampleTransaction.amount}
-                  onChange={(e) => setSampleTransaction({ ...sampleTransaction, amount: e.target.value })}
-                  className="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="Amount"
-                />
-                <input
-                  type="text"
-                  value={sampleTransaction.type}
-                  onChange={(e) => setSampleTransaction({ ...sampleTransaction, type: e.target.value })}
-                  className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="Type"
-                />
-                <input
-                  type="text"
-                  value={sampleTransaction.country}
-                  onChange={(e) => setSampleTransaction({ ...sampleTransaction, country: e.target.value })}
-                  className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="Country"
-                />
-                <input
-                  type="text"
-                  value={sampleTransaction.merchant}
-                  onChange={(e) => setSampleTransaction({ ...sampleTransaction, merchant: e.target.value })}
-                  className="w-40 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="Merchant"
-                />
-                <button
-                  type="button"
-                  onClick={handleEvaluate}
-                  disabled={evaluationState.loading}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {evaluationState.loading ? 'Evaluating...' : 'Evaluate'}
-                </button>
-              </div>
-            </div>
-            {evaluationState.message && (
-              <p className="mt-3 text-sm text-slate-700">{evaluationState.message}</p>
-            )}
-            {evaluationState.result?.result && (
-              <div className="mt-3 rounded border border-blue-200 bg-white p-3 text-sm text-slate-700">
-                <p className="font-medium">Evaluation summary</p>
-                <p>Checked: {evaluationState.result.result.summary.totalChecked}</p>
-                <p>Triggered: {evaluationState.result.result.summary.triggeredCount}</p>
-                <p>Transactions ingested: {evaluationState.result.ingestedTransactions?.length ?? 0}</p>
-                {evaluationState.result.result.triggeredScenarios?.length > 0 && (
-                  <div className="mt-2">
-                    <p className="font-medium">Triggered scenarios:</p>
-                    <ul className="mt-1 list-disc pl-5">
-                      {evaluationState.result.result.triggeredScenarios.map((scenario: { title: string; reason: string }) => (
-                        <li key={scenario.title}>{scenario.title}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* Filters */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {/* Status Filter */}
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-2">Status</label>
@@ -312,6 +135,26 @@ const Alerts = () => {
                 <option value="medium">Medium</option>
                 <option value="low">Low</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-2">From date</label>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-900 mb-2">To date</label>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
             {/* Sort */}

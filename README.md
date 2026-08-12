@@ -4,7 +4,7 @@ A full-stack monorepo application for defining custom alert scenarios,
 processing transactions through a rule-based pipeline, and investigating 
 flagged activity in real time.
 
-> Currently in development — Day 9 of build log below.
+> Currently in development — Day 10 of build log below.
 
 ---
 
@@ -60,7 +60,67 @@ The diagram illustrates the FinGuard monorepo architecture. The React frontend i
 
 ---
 
+## Product Screenshots
+
+### 1. Dashboard Overview
+
+![Dashboard Overview](docs/imgs/Dashboard.png)
+
+The dashboard gives users a quick summary of their account, active scenarios, and current alert status. It is designed for fast monitoring and helps teams understand the overall risk posture at a glance.
+
+### 2. Alerts Page
+
+![Alerts Page](docs/imgs/alerts%20page.png)
+
+The alerts page lists triggered alerts with status and severity filters. Users can review transaction activity, search by date range, and resolve or remove alerts once reviewed.
+
+### 3. Scenario Builder
+
+![Scenario Builder](docs/imgs/senerio%20page.png)
+
+This screen lets users create custom financial risk scenarios by defining titles, descriptions, conditions, and threshold rules. The builder supports scenario configuration for blocked countries, blocked transaction types, and minimum/maximum amount ranges.
+
+### 4. Create Scenario Modal
+
+![Create Scenario](docs/imgs/create%20Senerio.png)
+
+The create scenario modal helps users configure a new rule quickly. Each scenario can be assigned a severity level such as low, medium, or high, making alert prioritization clearer for operations teams.
+
+### 5. Transaction Details View
+
+![Transaction Details](docs/imgs/View%20alert%20details.png)
+
+The transaction details screen provides full investigation context for a flagged alert. It includes customer data, transaction attributes, timeline, and the reason the alert was triggered so analysts can make a quick and informed decision.
+
+### 6. Automated Test Results
+
+![Backend Test Results](docs/imgs/tests.png)
+
+This validation screenshot captures the backend test suite passing successfully. It confirms the system is covering critical flows such as auth, scenario management, pipeline checks, and alert filtering in an automated and repeatable way.
+
+These screens demonstrate the core FinGuard workflow: create risk scenarios, monitor transactions, review alerts, and investigate suspicious activity with clear context.
+
+---
+
 ## Development Log
+
+FinGuard is a financial risk monitoring platform designed to help teams detect suspicious transactions, define custom risk scenarios, and manage alerts in a single workflow. The project focuses on practical monitoring use cases such as blocked countries, blocked transaction types, amount thresholds, and amount-range validation.
+
+The system combines a React frontend, an Express API, MongoDB storage, and a rule-based transaction evaluation engine to turn raw transaction events into clear risk alerts. It also includes a structured investigation flow so users can review why an alert was triggered, inspect the transaction details, and take corrective action.
+
+### Core milestones delivered
+- User authentication and protected app access
+- Scenario creation and lifecycle management
+- Risk rule engine for amount and transaction checks
+- Alert generation and alert filtering
+- Dashboard summary and alerts overview
+- Transaction detail investigation workflow
+- Provider integrations for real transaction ingestion
+- Severity-based prioritization for alerts
+
+The project is designed to evolve from a functional demo into a more complete fintech risk-monitoring product with stronger backend integrations, better reporting, and production-ready operational workflows.
+
+---
 
 ### Day 1 — Monorepo Scaffold & Project Initialization
 **Date:** June 10, 2026
@@ -287,6 +347,42 @@ Implemented dynamic severity levels (low, medium, high) throughout the system:
 
 ---
 
+### Day 10 — Final QA, Scenario Fixes, and Product Polish
+**Date:** August 12, 2026
+
+Focused on final validation, bug cleanup, and project presentation polish. Verified the core backend logic for scenario creation, severity persistence, alert filtering, and rule evaluation under test mode to ensure the app behavior matched the expected fintech workflow.
+
+Fixed a critical issue where scenario severity was not being saved correctly when creating or updating rules, which caused the UI selection for low/medium/high to not reflect in the actual evaluation logic. Updated the backend to persist severity consistently and aligned the scenario model and controller behavior with the app’s alert prioritization flow.
+
+Also completed alert system updates so the filters for severity and date range correctly passed through the API and returned the expected subset of alerts. This helped clean up the operational workflow for reviewing alerts over time and made the low/medium/high severity triage more reliable.
+
+Removed the test/debug evaluation controls from the production-facing Alerts page so the app looks like a polished product instead of a demonstration environment. Consolidated the server tests into a single `server/tests` folder and validated the behavior with the backend suite.
+
+**Completed today:**
+- Fixed scenario severity persistence during create and update
+- Added severity and date-range filtering support for alerts
+- Removed evaluation/demo UI controls from the app
+- Centralized backend tests under `server/tests`
+- Updated project README and image documentation for final presentation
+
+**Tested:**
+- Scenario create/update logic
+- Alert filtering by severity and date
+- Core backend rule evaluation test suite in isolated test mode
+
+**Next:**
+- Restore local production runtime by resolving MongoDB connectivity for live app startup
+- Improve provider automation and fraud workflow coverage
+- Extend rule engine capabilities for deeper investigation analytics
+
+**What I learned:**
+- How a small persistence mismatch can break an otherwise complete feature from the UI down to the logic layer.
+- Why severity and date filters need to be synchronized across backend, API, and front-end state.
+- How important it is to remove validation/demo controls before final product handoff.
+- The value of isolated test-mode validation when external infrastructure is unavailable.
+
+---
+
 ## Development Summary
 
 | Day | Expected | Done | Challenges |
@@ -300,4 +396,5 @@ Implemented dynamic severity levels (low, medium, high) throughout the system:
 | Day 7 | Build rule engine, alert storage, and dashboard alert integration. | Added `/api/pipeline/evaluate` endpoint, Alert model and API, real-time dashboard metrics, threshold-based rule evaluation, and end-to-end alert flow. | Managing transaction evaluation state, ensuring alerts persist correctly, and maintaining React component performance. |
 | Day 8 | Build dedicated alerts management UX and expand rule logic beyond thresholds. | Added Alerts page, sample transaction evaluation, min/max + blocked-country/type rule support, local sample-ingestion helper, and triggered-scenario summary output. | Keeping the experience useful without live payment-provider integration while still demonstrating alert creation end to end. |
 | Day 9 | Build real payment provider integration and wire to pipeline. | Added provider adapters (Stripe, PayPal, Square, Custom), Integration model and CRUD API, connection testing, Integration Settings page, and `/api/pipeline/evaluate-integration` endpoint. | Managing credentials securely, abstracting provider-specific logic, and ensuring extensibility for future providers. |
+| Day 10 | Final QA, scenario logic fixes, and project presentation polish. | Fixed scenario severity persistence, alert severity/date filtering, removed debug evaluation UI, centralized tests in `server/tests`, and updated README with screenshots and product narrative. | MongoDB connectivity remains required for full live app startup outside isolated test mode. |
 
